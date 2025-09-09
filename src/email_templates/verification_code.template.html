@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verification Code</title>
+    <style>
+        body {
+            font-family: 'Helvetica', Arial, sans-serif;
+            background-color: #f4f4f7;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 40px auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            overflow: hidden;
+            padding: 20px;
+        }
+        .header {
+            text-align: center;
+            background-color: #4f46e5;
+            color: white;
+            padding: 20px 0;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .content {
+            text-align: center;
+            padding: 30px 20px;
+        }
+        .code {
+            font-size: 32px;
+            font-weight: bold;
+            color: #4f46e5;
+            background-color: #f0f0ff;
+            display: inline-block;
+            padding: 10px 20px;
+            border-radius: 6px;
+            margin: 20px 0;
+            letter-spacing: 4px;
+        }
+        .text {
+            font-size: 16px;
+            color: #555555;
+        }
+        .footer {
+            text-align: center;
+            font-size: 14px;
+            color: #999999;
+            padding: 20px;
+        }
+        .button {
+            display: inline-block;
+            background-color: #4f46e5;
+            color: white;
+            text-decoration: none;
+            padding: 12px 25px;
+            border-radius: 6px;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+        @media screen and (max-width: 600px) {
+            .container {
+                margin: 20px;
+            }
+            .code {
+                font-size: 28px;
+                padding: 8px 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            Verify Your Email
+        </div>
+        <div class="content">
+            <p class="text">Hello,</p>
+            <p class="text">Use the following verification code to confirm your email address. This code is valid for 15 minutes.</p>
+            <div class="code">{{CODE}}</div>
+            <p class="text">If you didn't request this, you can safely ignore this email.</p>
+            <a href="#" class="button">Go to App</a>
+        </div>
+        <div class="footer">
+            &copy; 2025 My App. All rights reserved.
+        </div>
+    </div>
+</body>
+</html>
