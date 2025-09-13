@@ -14,7 +14,8 @@ export interface payloadToken{
 
 
 export enum EMAIL_TYPE{
-   VERIFICATION_CODE,
-   RESERVATION_CONFIRM,
+   VERIFICATION_CODE='verification_code',
+   RESERVATION_CONFIRM = 'client_reservation',
+   ADMIN_CONFIRM = 'admin_reservation'
 }
 

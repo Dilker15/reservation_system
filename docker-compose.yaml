@@ -16,6 +16,15 @@ services:
           - postgres15_volumes:/var/lib/postgresql/data
 
 
+      redis_bull:
+        container_name: redis_bull
+        image: redis
+        ports:
+          - "${REDIS_PORT}:${REDIS_PORT}"
+        
+
+
+
 volumes:
   postgres15_volumes:
     external: true
