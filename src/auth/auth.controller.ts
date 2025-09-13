@@ -1,8 +1,12 @@
-import { Controller, Post, Body ,HttpCode, HttpStatus, NotImplementedException } from '@nestjs/common';
+import { Controller, Post, Body ,HttpCode, HttpStatus, NotImplementedException, UseGuards, Req } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register-auth-dto';
 import { LoginDto } from './dto/login.dto';
 import { VerifyEmailDto } from './dto/verify-email.dto';
+import { User } from 'src/users/entities/user.entity';
+import { GetUser } from './decorators/getUser.decorator';
+import { Public } from './decorators/public.decorator';
+
 
 @Controller('auth')
 export class AuthController {
@@ -10,15 +14,17 @@ export class AuthController {
   ) {}
 
 
+
+  @Public()
   @Post('/register')
   register(@Body() createAuthDto: RegisterDto) {
     return this.authService.create(createAuthDto);
   }
 
-  
+  @Public()
   @Post('/login')
   @HttpCode(HttpStatus.OK)
-  login(@Body() loginDto:LoginDto) {
+  login(@Body() loginDto:LoginDto){
     return this.authService.login(loginDto)
   }
 
