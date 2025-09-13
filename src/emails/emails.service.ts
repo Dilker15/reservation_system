@@ -38,6 +38,8 @@ export class EmailsService {
     }
   }
 
+
+  
   async sendEmailVerificationCode(to: string, code: string) {
     await this.sendEmailTemplate(
       to,
@@ -47,21 +49,24 @@ export class EmailsService {
     );
   }
 
-  async sendReservationEmailClient(to: string, reservationId: string, name: string) {
+
+  async sendReservationEmailClient(to: string,reservation_data:any) {
     await this.sendEmailTemplate(
       to,
-      'Reservation',
-      'reservation_client.template.html',
-      { RESERVATION_ID: reservationId, NAME: name }
+      'Reservation Succesfull',
+      'reservation_confirm.template.html',
+      { ...reservation_data}
     );
   }
 
-  async sendReservationEmailAdmin(to: string, reservationId: string, name: string) {
+
+
+  async sendReservationEmailAdmin(to: string,reservation_data:any) {
     await this.sendEmailTemplate(
       to,
       'New Reservation',
       'reservation_admin.template.html',
-      { RESERVATION_ID: reservationId, NAME: name }
+      { ...reservation_data}
     );
   }
 }

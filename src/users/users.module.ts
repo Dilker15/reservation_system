@@ -5,11 +5,12 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
 import { GeneratorCodeService } from 'src/common/helpers/codeGenerator';
 import { BcryptService } from 'src/common/helpers/bcryp';
+import { QueueBullModule } from 'src/queue-bull/queue-bull.module';
 
 
 @Module({
   controllers: [UsersController],
-  imports:[TypeOrmModule.forFeature([User])],
+  imports:[TypeOrmModule.forFeature([User]),QueueBullModule],
   providers: [UsersService,GeneratorCodeService,BcryptService],
   exports:[UsersService]
 })

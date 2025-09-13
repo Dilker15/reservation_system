@@ -7,7 +7,7 @@ import { AdminRegisterStrategy } from './strategies/admin-register.strategy';
 import { BcryptService } from 'src/common/helpers/bcryp';
 import { JwtService } from '@nestjs/jwt';
 import { EmailsModule } from 'src/emails/emails.module';
-import { EmailsService } from 'src/emails/emails.service';
+
 
 @Module({
   controllers: [AuthController],
