@@ -14,6 +14,7 @@ import { User } from 'src/users/entities/user.entity';
 import { LoginResponseDto } from './dto/login-response.dto';
 import { EmailsService } from 'src/emails/emails.service';
 import { EnqueueMailServices } from 'src/queue-bull/enqueue-mail-services';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class AuthService {
@@ -24,6 +25,7 @@ export class AuthService {
     private readonly userServices:UsersService,
     private readonly bcryptService:BcryptService,
     private readonly jwtService:JwtService,
+    private readonly conf:ConfigService,
   ){
   }
   async create(createAuthDto:RegisterDto):Promise<UserResponseDto> {
@@ -52,7 +54,7 @@ export class AuthService {
   
 
   private async signJWToken(payload: payloadToken): Promise<string> {
-    return this.jwtService.signAsync(payload,{secret:process.env.SEED_TOKEN,expiresIn:process.env.EXPIRATION_TOKEN});
+    return this.jwtService.signAsync(payload,{secret:this.conf.get<string>('SEED_TOKEN'),expiresIn:this.conf.get<string>('EXPIRATION_TOKEN')});
   }
 
 

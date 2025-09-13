@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, InternalServerErrorException, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
 import { FindOptionsWhere, Repository } from 'typeorm';
@@ -57,6 +57,15 @@ export class UsersService {
   }
 
 
+  async findUserValidById(id:string):Promise<User>{
+    const user = await this.userRepository.findOneBy({id});
+    if(!user || !user.is_active || !user.email_verified){
+     throw new UnauthorizedException('User not found or inactive');
+
+    }
+    return user;
+    
+  }
 
 
 
