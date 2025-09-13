@@ -13,6 +13,7 @@ import { JwtService } from '@nestjs/jwt';
 import { User } from 'src/users/entities/user.entity';
 import { LoginResponseDto } from './dto/login-response.dto';
 import { EmailsService } from 'src/emails/emails.service';
+import { EnqueueMailServices } from 'src/queue-bull/enqueue-mail-services';
 
 @Injectable()
 export class AuthService {
@@ -23,7 +24,6 @@ export class AuthService {
     private readonly userServices:UsersService,
     private readonly bcryptService:BcryptService,
     private readonly jwtService:JwtService,
-    private readonly emailServices:EmailsService,
   ){
   }
   async create(createAuthDto:RegisterDto):Promise<UserResponseDto> {
@@ -44,17 +44,17 @@ export class AuthService {
      if(!comparedPassword){
         throw new BadRequestException(`Email or password wrong`);
      }
-     
      const token = await this.signJWToken({role:userFound.role,sub:userFound.id});
-     await this.emailServices.sendEmailVerificationCode('dilker72@gmail.com,','C-33334');
      return {...this.loginResponse(userFound),token}
   }
 
 
+  
 
   private async signJWToken(payload: payloadToken): Promise<string> {
     return this.jwtService.signAsync(payload,{secret:process.env.SEED_TOKEN,expiresIn:process.env.EXPIRATION_TOKEN});
   }
+
 
 
   private loginResponse(user:User):LoginResponseDto{

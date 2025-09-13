@@ -6,6 +6,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { EmailsModule } from './emails/emails.module';
+import { BullModule } from '@nestjs/bullmq';
+import { QueueBullModule } from './queue-bull/queue-bull.module';
 
 @Module({
   imports: [
@@ -24,9 +26,20 @@ import { EmailsModule } from './emails/emails.module';
          autoLoadEntities:true,
       })
     }),
+    BullModule.forRootAsync({
+      imports:[ConfigModule],
+      inject:[ConfigService],
+      useFactory:(config:ConfigService)=>({
+        connection:{
+          host:config.get<string>('REDIS_HOST'),
+          port:config.get<number>('REDIS_PORT'),
+        }
+      })
+    }),
     AuthModule,
     UsersModule,
-    EmailsModule
+    EmailsModule,
+    QueueBullModule,
 
   ],
   controllers: [AppController],
