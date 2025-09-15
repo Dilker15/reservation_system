@@ -6,6 +6,8 @@ import { VerifyEmailDto } from './dto/verify-email.dto';
 import { User } from 'src/users/entities/user.entity';
 import { GetUser } from './decorators/getUser.decorator';
 import { Public } from './decorators/public.decorator';
+import { Role } from './decorators/role.decorator';
+import { Roles } from 'src/common/Interfaces';
 
 
 @Controller('auth')
@@ -28,9 +30,11 @@ export class AuthController {
     return this.authService.login(loginDto)
   }
 
+
+  @Role(Roles.OWNER,Roles.CLIENT)
   @Post('/verify-email')
   verifyEmail(@Body() verifyDto:VerifyEmailDto){
-    
+    return 'all it ok';
   }
 
 

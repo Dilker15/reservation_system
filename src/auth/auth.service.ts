@@ -30,8 +30,8 @@ export class AuthService {
   }
   async create(createAuthDto:RegisterDto):Promise<UserResponseDto> {
     switch(createAuthDto.role){
-          case Roles.ADMIN :
-                return await this.adminStrategy.register(createAuthDto as AdminDto,Roles.ADMIN);
+          case Roles.OWNER :
+                return await this.adminStrategy.register(createAuthDto as AdminDto,Roles.OWNER);
           case Roles.CLIENT:
                 return await this.clienteStrategy.register(createAuthDto as ClientDto,Roles.CLIENT);    
           default:
