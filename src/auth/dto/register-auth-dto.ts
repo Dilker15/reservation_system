@@ -27,9 +27,9 @@ export class RegisterDto{
     @MinLength(8,{message:"Password should have at least 8 characters"})
     password:string;
 
-    @ApiProperty({description:`${Roles.ADMIN} or ${Roles.CLIENT}`,example:'ADMIN'})
+    @ApiProperty({description:`${Roles.OWNER} or ${Roles.CLIENT}`,example:'OWNER'})
     @IsString()
-    @IsIn(['ADMIN', 'CLIENT'])
+    @IsIn(['OWNER', 'CLIENT'])
     role: Roles;
 
 

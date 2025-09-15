@@ -23,7 +23,7 @@ import { QueueBullModule } from './queue-bull/queue-bull.module';
          username:config.get<string>('DB_USERNAME'),
          password:config.get<string>('DB_PASSWORD'),
          synchronize:true,
-         autoLoadEntities:true,
+         autoLoadEntities:true
       })
     }),
     BullModule.forRootAsync({
