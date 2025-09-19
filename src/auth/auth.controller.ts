@@ -34,7 +34,7 @@ export class AuthController {
   @Role(Roles.OWNER,Roles.CLIENT)
   @Post('/verify-email')
   verifyEmail(@Body() verifyDto:VerifyEmailDto){
-    return 'all it ok';
+   throw new NotImplementedException('verify-email endpoint is not implemented yet');
   }
 
 

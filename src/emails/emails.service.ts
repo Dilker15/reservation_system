@@ -33,7 +33,7 @@ export class EmailsService {
         html: template,
       });
     } catch (error) {
-      console.error('Error sending email:', error);
+      //console.error('Error sending email:', error);
       throw new InternalServerErrorException(`Email was not sent to: ${to}`);
     }
   }
