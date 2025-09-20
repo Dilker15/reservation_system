@@ -1,24 +1,45 @@
-import { BcryptService } from "./bcryp";
-import { GeneratorCodeService } from "./codeGenerator"
+import { BcryptService } from './bcryp';
+import { GeneratorCodeService } from './codeGenerator';
 
+describe('GeneratorCodeService', () => {
+  let codeService: GeneratorCodeService;
 
+  beforeEach(() => {
+    codeService = new GeneratorCodeService();
+  });
 
-describe("Common Helpers",()=>{
-    
+  it('should return a 5-digit numeric code', () => {
+    const code = codeService.generate();
+    expect(code).toMatch(/^\d{5}$/);
+  });
+  
+});
 
-    it("It should return a code with 5 number",()=>{
-       const codeGenerated = GeneratorCodeService.generate();
-       expect(codeGenerated).toMatch(/^\d{5}$/);
-    });
+describe('BcryptService', () => {
+  let bcryptService: BcryptService;
 
+  beforeEach(() => {
+    bcryptService = new BcryptService();
+  });
 
-    it("It should be return a hashed Password",async()=>{
-        const testPassword = "Password123";
-        const hash = await BcryptService.hasPassword(testPassword);
-        expect(hash).not.toEqual(testPassword);
-        expect(hash.startsWith("$2b$")).toBe(true)
-        
-    })
-})
+  it('should hash a password', async () => {
+    const password = 'Password123';
+    const hash = await bcryptService.hashPassword(password);
+    expect(hash.startsWith('$2b$')).toBe(true);
+  });
 
+  it('should verify correct hash with password', async () => {
+    const password = 'Secure123';
+    const hash = await bcryptService.hashPassword(password);
+    const isValid = await bcryptService.verifyPassword(password, hash);
+    expect(isValid).toBe(true);
+  });
 
+  it('should fail verification with incorrect password', async () => {
+    const password = 'Secure123';
+    const wrongPassword = 'Secure12e';
+    const hash = await bcryptService.hashPassword(password);
+    const isValid = await bcryptService.verifyPassword(wrongPassword, hash);
+    expect(isValid).toBe(false);
+  });
+});
