@@ -8,6 +8,11 @@ import { UsersModule } from './users/users.module';
 import { EmailsModule } from './emails/emails.module';
 import { BullModule } from '@nestjs/bullmq';
 import { QueueBullModule } from './queue-bull/queue-bull.module';
+import { PlacesModule } from './places/places.module';
+import { CountriesModule } from './countries/countries.module';
+import { Category } from './shared/entities/category.entity';
+import { BookingModeModule } from './booking-mode/booking-mode.module';
+
 
 @Module({
   imports: [
@@ -23,7 +28,8 @@ import { QueueBullModule } from './queue-bull/queue-bull.module';
          username:config.get<string>('DB_USERNAME'),
          password:config.get<string>('DB_PASSWORD'),
          synchronize:true,
-         autoLoadEntities:true
+         autoLoadEntities:true,
+         entities: [Category],
       })
     }),
     BullModule.forRootAsync({
@@ -40,6 +46,9 @@ import { QueueBullModule } from './queue-bull/queue-bull.module';
     UsersModule,
     EmailsModule,
     QueueBullModule,
+    PlacesModule,
+    CountriesModule,
+    BookingModeModule,
 
   ],
   controllers: [AppController],
