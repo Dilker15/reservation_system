@@ -5,6 +5,8 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ResponseInterceptor } from './common/interceptors/response/response.interceptor';
 import { ErrorsFilter } from './common/filters/errors/errors.filter';
 import { JwtAuthGuard } from './auth/guards/jwt-auth-guards';
+import { seedCategory } from './shared/seeders/category.seeder';
+import { DataSource } from 'typeorm';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -28,7 +30,8 @@ async function bootstrap() {
 
     const document = SwaggerModule.createDocument(app, config);
     SwaggerModule.setup('api/docs',app, document);
-
+     const dataSource = app.get(DataSource);
+    await seedCategory(dataSource)
     await app.listen(process.env.APP_PORT ?? 4000);
 
 
