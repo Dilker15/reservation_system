@@ -37,20 +37,8 @@ export class CountriesService {
 }
 
 
-  findAll() {
+  async findAll() {
    return countries;
    
-  }
-
-  findOne(id: number){
-    return countries;
-  }
-
-  update(id: number, updateCountryDto: UpdateCountryDto) {
-    return `This action updates a #${id} country`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} country`;
   }
 }
