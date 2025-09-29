@@ -14,9 +14,5 @@ export class BookingModeController {
     return this.bookingModeService.create(createBookingModeDto);
   }
 
-  @Get()
-  findAll() {
-    return this.bookingModeService.findAll();
-  }
 
 }

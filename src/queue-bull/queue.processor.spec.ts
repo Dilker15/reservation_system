@@ -4,6 +4,7 @@ import { Test, TestingModule } from "@nestjs/testing";
 import { Job } from "bullmq";
 import { EMAIL_TYPE } from "src/common/Interfaces";
 import { clear } from "console";
+import { BadRequestException, InternalServerErrorException } from "@nestjs/common";
 
 
 
@@ -83,6 +84,23 @@ describe('QueueProcessor',()=>{
           } as unknown as Job;
           await processor.process(job);
           expect(mockEmailService.sendReservationEmailAdmin).toHaveBeenCalledWith(job.data.data.to,job.data.data.data)
+    });
+
+
+    it("should fail with InternalServerErrorException if notification type is invalid",async()=>{
+        const wrongType = 4;
+        const job = {
+            data: {
+                notification_type: wrongType,
+                data: {
+                    to: "test@gmail.com",
+                    data:{ code: 23422, message: "verification code test" },
+                 },
+            },
+      } as unknown as Job;
+
+       
+      await expect(processor.process(job)).rejects.toThrow(new InternalServerErrorException('Type Notification Email Does not exist'));
     });
 
     
