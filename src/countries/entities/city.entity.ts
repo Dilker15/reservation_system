@@ -20,7 +20,7 @@ export class City{
 
     
 
-    @ManyToOne(()=>Country,(country)=>country.cities,{eager:true})
+    @ManyToOne(()=>Country,(country)=>country.cities)
     @JoinColumn({ name: 'country_id' })
     country:Country;
 

@@ -1,5 +1,6 @@
 import { BookingModeType, BookingName } from "src/common/Interfaces";
-import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import { Place } from "src/places/entities/place.entity";
+import { Column, CreateDateColumn, Entity, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 
 
 @Entity({name:'booking_mode'})
@@ -19,6 +20,9 @@ export class BookingMode {
 
   @Column({name:'min_duration' ,type: 'int',default:1})
   min_duration: number; 
+
+  @OneToMany(()=>Place,(place)=>place.booking_mode)
+  places:Place[];
 
 
   @Column({ name:'is_active',type: 'boolean', default: true })

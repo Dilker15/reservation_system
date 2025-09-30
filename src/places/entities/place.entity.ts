@@ -1,7 +1,11 @@
+import { BookingMode } from "src/booking-mode/entities/booking-mode.entity";
 import { City } from "src/countries/entities/city.entity";
-import { Column, CreateDateColumn, Entity, Index, JoinColumn, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import { User } from "src/users/entities/user.entity";
+import { Column, CreateDateColumn, Entity, Index, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import { PlaceImages } from "./place-images.entity";
+import { Category } from "src/categories/entities/category.entity";
 
-@Entity()
+@Entity({name:'places'})
 export class Place {
 
     @PrimaryGeneratedColumn('uuid')
@@ -39,6 +43,26 @@ export class Place {
     @ManyToOne(()=>City,(city)=>city.places)
     @JoinColumn({name:'city_id'})
     city:City;
+
+
+    @ManyToOne(()=>BookingMode,(booking)=>booking.places)
+    @JoinColumn({name:'booking_mode_id'})
+    booking_mode:BookingMode;
+
+
+
+    @ManyToOne(()=>Category,(category)=>category.places)
+    @JoinColumn({name:'category_id'})
+    category:Category;
+
+
+    @ManyToOne(()=>User,(owner)=>owner.places)
+    @JoinColumn({name:'owner_id'})
+    owner:User;
+
+
+    @OneToMany(()=>PlaceImages,(placeImage)=>placeImage.place)
+    images:PlaceImages[];
 
 
     @Column({name:'is_active',type:'bool',default:true})
