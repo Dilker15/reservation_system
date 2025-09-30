@@ -19,6 +19,8 @@ export class UserResponseDto{
 
         @Expose()
         is_active:boolean;
+
+        
         @Expose()
         email_verified:boolean;
 }

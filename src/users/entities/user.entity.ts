@@ -1,5 +1,6 @@
 import { Roles } from "src/common/Interfaces";
-import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import { Place } from "src/places/entities/place.entity";
+import { Column, CreateDateColumn, Entity, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 
 @Entity({name:'users'})
 export class User {
@@ -39,6 +40,10 @@ export class User {
 
     @Column({name:'verification_code', type:'varchar', length:5,nullable:true})
     verification_code:string;
+
+
+    @OneToMany(()=>Place,(place)=>place.owner)
+    places?:Place[];
 
 
     @CreateDateColumn({ type: 'timestamp' })

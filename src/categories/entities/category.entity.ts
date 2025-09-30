@@ -1,4 +1,5 @@
-import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn } from "typeorm";
+import { Place } from "src/places/entities/place.entity";
+import { Column, CreateDateColumn, Entity, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 
 
 
@@ -19,6 +20,10 @@ export class Category{
 
     @Column({name:'is_active', type:'bool', default:true})
     is_active:boolean;
+
+
+    @OneToMany(()=>Place,(place)=>place.category)
+    places:Place[];
 
 
     @CreateDateColumn({name:'created_at',type:'timestamp'})
