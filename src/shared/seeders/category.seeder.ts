@@ -1,6 +1,7 @@
 import { DataSource } from "typeorm";
-import { Category } from "../entities/category.entity";
+
 import categories from "../data/categories.data";
+import { Category } from "src/categories/entities/category.entity";
 
 
 export async function seedCategory(data:DataSource):Promise<void>{
