@@ -1,6 +1,8 @@
 
 
-import { Category } from "../entities/category.entity";
+import { Category } from "src/categories/entities/category.entity";
+
+
 
 const categories: Partial<Category>[] = [
   {

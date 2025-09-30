@@ -18,8 +18,29 @@ export class CountriesController {
 
   @Public()
   @Get()
-  findAll() {
+  findAllCountries() {
     return this.countriesService.findAll();
+  }
+
+
+  @Public()
+  @Get(':id')
+  findCountry(@Param('id') id: string) {
+    return this.countriesService.findOneCountry(id);
+  }
+
+
+  @Public()
+  @Get(':id/cities')
+  getCitiesFromCountry(@Param('id') id:string){
+     return this.countriesService.findCitiesFromCountry(id);
+  }
+
+
+  @Public()
+  @Get(':id_country/cities/:id_city')
+  getCity(@Param('id_country') id_country:string,@Param('id_city') id_city:string){
+    return this.countriesService.findCity(id_country,id_city);
   }
 
 }
