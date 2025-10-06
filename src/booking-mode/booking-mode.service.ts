@@ -13,8 +13,8 @@ export class BookingModeService {
 
   }
   
-  create(createBookingModeDto: CreateBookingModeDto) {
-    return createBookingModeDto;
+  create(createBookingModeDto: CreateBookingModeDto):Promise<CreateBookingModeDto> {
+    return Promise.resolve(createBookingModeDto);
   }
 
 

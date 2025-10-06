@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotImplementedException } from '@nestjs/common';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -14,8 +14,8 @@ export class CategoriesService {
 
   }
 
-  create(createCategoryDto: CreateCategoryDto) {
-    return 'This action adds a new category';
+   create(createCategoryDto: CreateCategoryDto) {
+    throw new NotImplementedException("Method not implemented yet");
   }
 
   async findAll():Promise<CategoryResponseDto[]> {
