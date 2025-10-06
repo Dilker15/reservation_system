@@ -14,3 +14,5 @@ export async function seedBookingMode(data:DataSource):Promise<void>{
     }
     console.log("seeder booking-mode created");
 }
+
+
