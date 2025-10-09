@@ -1,14 +1,21 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseInterceptors, UploadedFiles } from '@nestjs/common';
 import { PlacesService } from './places.service';
 import { CreatePlaceDto } from './dto/create-place.dto';
 import { UpdatePlaceDto } from './dto/update-place.dto';
+import { Role } from 'src/auth/decorators/role.decorator';
+import { Roles } from 'src/common/Interfaces';
+import { ImageUploadInterceptor } from 'src/common/interceptors/response/images.place.interceptor';
 
 @Controller('places')
 export class PlacesController {
   constructor(private readonly placesService: PlacesService) {}
 
+  @UseInterceptors(ImageUploadInterceptor('images'))
+  @Role(Roles.OWNER)
   @Post()
-  create(@Body() createPlaceDto: CreatePlaceDto) {
+  create(@Body() createPlaceDto: CreatePlaceDto,@UploadedFiles() images:Express.Multer.File[]) {
+    console.log(images);
+    console.log("uploaded")
     return this.placesService.create(createPlaceDto);
   }
 

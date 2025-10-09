@@ -5,7 +5,7 @@ import { UpdatePlaceDto } from './dto/update-place.dto';
 @Injectable()
 export class PlacesService {
   create(createPlaceDto: CreatePlaceDto) {
-    return 'This action adds a new place';
+    return createPlaceDto;
   }
 
   findAll() {
