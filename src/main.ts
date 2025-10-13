@@ -15,7 +15,8 @@ async function bootstrap() {
   app.setGlobalPrefix('/api/v1/reservations');
   app.useGlobalPipes(new ValidationPipe({
     whitelist:true,               
-    forbidNonWhitelisted:true,    
+    forbidNonWhitelisted:true,   
+    transform:true
   }));
   app.useGlobalInterceptors(new ResponseInterceptor());
   app.useGlobalFilters(new ErrorsFilter())
