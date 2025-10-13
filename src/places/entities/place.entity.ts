@@ -4,6 +4,8 @@ import { User } from "src/users/entities/user.entity";
 import { Column, CreateDateColumn, Entity, Index, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 import { PlaceImages } from "./place-images.entity";
 import { Category } from "src/categories/entities/category.entity";
+import type { Availability, FieldLocation } from "../interfaces/interfaces";
+import { Transform } from "class-transformer";
 
 @Entity({name:'places'})
 export class Place {
@@ -26,22 +28,25 @@ export class Place {
     address:string;
 
 
-    @Column({name:'location',type:'json'})
-    location:string;
+   
 
 
     @Column({name:'price',type:'float'})
     price:number;
 
 
-    @Column({ name: 'availability', type: 'json' })
-    availability: {
-    [day: string]: { from: string, to: string }[];
-    };
+
+
+    @Column({name:'location',type:'jsonb'})
+    location:FieldLocation;
+
+
+    @Column({ name: 'availability', type: 'jsonb' })
+    availability:Availability;
 
 
     @ManyToOne(()=>City,(city)=>city.places)
-    @JoinColumn({name:'city_id'})
+    @JoinColumn({name:'city_id'}) 
     city:City;
 
 
