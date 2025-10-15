@@ -1,13 +1,11 @@
-
 import { BadRequestException } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
+import { memoryStorage } from 'multer';
 import { extname } from 'path';
 import { Request } from 'express';
 
 interface ImageInterceptorOptions {
   maxFileSize?: number; 
-  destination?: string;
   allowedFormats?: string[];
 }
 
@@ -18,27 +16,18 @@ export function ImageUploadInterceptor(
 ) {
   const {
     maxFileSize = 3,
-    destination = './uploads/images/places',
     allowedFormats = ['jpg', 'jpeg', 'png', 'webp'],
   } = options;
 
   const maxSizeInBytes = maxFileSize * 1024 * 1024;
-  const allowedMimeTypes:string[] = allowedFormats.map(format => {
+  const allowedMimeTypes: string[] = allowedFormats.map(format => {
     if (format === 'jpg') return 'image/jpeg';
     return `image/${format}`;
   });
   const allowedExtensions = allowedFormats.map(format => `.${format}`);
 
   return FilesInterceptor(fieldName, maxCount, {
-    storage: diskStorage({
-      destination: destination,
-      filename: (req, file, callback) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-        const ext = extname(file.originalname);
-        const filename = `${file.fieldname}-${uniqueSuffix}${ext}`;
-        callback(null, filename);
-      },
-    }),
+    storage: memoryStorage(), 
     fileFilter: (req: Request, file: Express.Multer.File, callback) => {
       if (!allowedMimeTypes.includes(file.mimetype)) {
         return callback(

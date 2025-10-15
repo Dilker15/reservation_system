@@ -37,12 +37,12 @@ export class Place {
 
 
 
-    @Column({name:'location',type:'jsonb'})
-    location:FieldLocation;
+    @Column({name:'location',type:'varchar'})
+    location:string;
 
 
-    @Column({ name: 'availability', type: 'jsonb' })
-    availability:Availability;
+    @Column({ name: 'availability', type: 'varchar' })
+    availability:string;
 
 
     @ManyToOne(()=>City,(city)=>city.places)
