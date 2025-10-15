@@ -1,6 +1,7 @@
+import { UploadApiResponse } from "cloudinary";
 
 export interface IImageUpload {
-  uploadImages(files: Express.Multer.File[]): Promise<void>;
+  uploadImages(filesPath:string[]): Promise<UploadApiResponse[]>;
   deleteImage(publicId: string): Promise<void>;
   getImagesByPlace(placeId: string): Promise<void>;
   getImageById(id: string): Promise<void>;

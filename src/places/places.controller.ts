@@ -5,19 +5,22 @@ import { UpdatePlaceDto } from './dto/update-place.dto';
 import { Role } from 'src/auth/decorators/role.decorator';
 import { Roles } from 'src/common/Interfaces';
 import { ImageUploadInterceptor } from 'src/common/interceptors/response/images.place.interceptor';
+import { ImageLocalService } from 'src/common/helpers/imageLocalService';
+
 
 @Controller('places')
 export class PlacesController {
-  constructor(private readonly placesService: PlacesService) {}
+  constructor(private readonly placesService: PlacesService,private readonly imageLocalService:ImageLocalService) {}
 
   @UseInterceptors(ImageUploadInterceptor('images'))
   @Role(Roles.OWNER)
   @Post()
-  create(@Body() createPlaceDto: CreatePlaceDto,@UploadedFiles() images:Express.Multer.File[]) {
-    console.log(images);
-    console.log("uploaded")
-    return this.placesService.create(createPlaceDto);
+  async create(@Body() createPlaceDto: CreatePlaceDto,@UploadedFiles() images:Express.Multer.File[]) {
+    const routeImages = await this.imageLocalService.saveImagesToDisk(images);
+    return this.placesService.create(createPlaceDto,routeImages);
   }
+
+
 
   @Get()
   findAll() {
@@ -38,4 +41,9 @@ export class PlacesController {
   remove(@Param('id') id: string) {
     return this.placesService.remove(+id);
   }
+
+
+ 
+
+
 }
