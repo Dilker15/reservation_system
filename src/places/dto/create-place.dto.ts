@@ -5,9 +5,6 @@ import {
   ValidateNested 
 } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
-import { ApiProperty } from '@nestjs/swagger';
-import { AvailabilityDto } from './availability.dto';
-import { LocationDto } from './location.dto';
 
 export class CreatePlaceDto {
  
@@ -23,15 +20,13 @@ export class CreatePlaceDto {
   address: string;
 
 
-  @ValidateNested()
-  @Type(() => LocationDto)
-  location: LocationDto;
+  @IsString()
+  location: string;
 
  
  
-  @ValidateNested()
-  @Type(() => AvailabilityDto)
-  availability: AvailabilityDto;
+  @IsString()
+  availability: string;
 
   
   @Type(() => Number)
