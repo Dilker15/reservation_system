@@ -30,7 +30,7 @@ export class PlaceImages{
     size:number;
 
 
-    @Column({name:'order',type:'int2'})
+    @Column({name:'order',type:'int2',default:0})
     order:number;
 
 
