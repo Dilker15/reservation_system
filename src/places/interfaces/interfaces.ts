@@ -14,3 +14,10 @@ export interface FieldLocation{
     latitude:number,
     longitude:number,
 }
+
+
+export enum placeEnumStatus {
+    ACTIVE = 'active',
+    PROCESSING = 'processing',
+    INACTIVE = 'inactive',
+}

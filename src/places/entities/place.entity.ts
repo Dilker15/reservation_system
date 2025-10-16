@@ -4,7 +4,7 @@ import { User } from "src/users/entities/user.entity";
 import { Column, CreateDateColumn, Entity, Index, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 import { PlaceImages } from "./place-images.entity";
 import { Category } from "src/categories/entities/category.entity";
-import type { Availability, FieldLocation } from "../interfaces/interfaces";
+import { Availability, FieldLocation, placeEnumStatus } from "../interfaces/interfaces";
 import { Transform } from "class-transformer";
 
 @Entity({name:'places'})
@@ -70,8 +70,8 @@ export class Place {
     images:PlaceImages[];
 
 
-    @Column({name:'is_active',type:'bool',default:true})
-    is_active:boolean;
+    @Column({name:'status',enum:placeEnumStatus,default:placeEnumStatus.PROCESSING})
+    status:placeEnumStatus;
 
 
     @CreateDateColumn({ type: 'timestamp' })

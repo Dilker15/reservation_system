@@ -11,7 +11,7 @@ export class CountriesController {
 
   @Public()
   @Post()
-  //@Role('super-admin')  JUST FOR ADMIN PANEL
+  //@Role('web-master')  JUST FOR ADMIN PANEL
   create() {
     return this.countriesService.insertCountriesAndCities();
   }

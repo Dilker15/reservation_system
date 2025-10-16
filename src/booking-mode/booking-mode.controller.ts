@@ -9,7 +9,8 @@ import { Role } from 'src/auth/decorators/role.decorator';
 export class BookingModeController {
   constructor(private readonly bookingModeService: BookingModeService) {}
 
-  @Role('super-admin')
+  //@Role('web-master')
+  @Public()
   @Post()
   create(@Body() createBookingModeDto: CreateBookingModeDto) {
     return this.bookingModeService.create(createBookingModeDto);
