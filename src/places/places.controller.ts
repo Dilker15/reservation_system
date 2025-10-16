@@ -6,6 +6,8 @@ import { Role } from 'src/auth/decorators/role.decorator';
 import { Roles } from 'src/common/Interfaces';
 import { ImageUploadInterceptor } from 'src/common/interceptors/response/images.place.interceptor';
 import { ImageLocalService } from 'src/common/helpers/imageLocalService';
+import { GetUser } from 'src/auth/decorators/getUser.decorator';
+import { User } from 'src/users/entities/user.entity';
 
 
 @Controller('places')
@@ -15,9 +17,9 @@ export class PlacesController {
   @UseInterceptors(ImageUploadInterceptor('images'))
   @Role(Roles.OWNER)
   @Post()
-  async create(@Body() createPlaceDto: CreatePlaceDto,@UploadedFiles() images:Express.Multer.File[]) {
+  async create(@Body() createPlaceDto: CreatePlaceDto,@UploadedFiles() images:Express.Multer.File[],@GetUser() currentUser:User) {
     const routeImages = await this.imageLocalService.saveImagesToDisk(images);
-    return this.placesService.create(createPlaceDto,routeImages);
+    return this.placesService.create(createPlaceDto,routeImages,currentUser);
   }
 
 
