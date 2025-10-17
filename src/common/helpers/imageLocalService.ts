@@ -28,13 +28,12 @@ export class ImageLocalService{
     async removeImageDisk(imagesLocalPath: string[]): Promise<void> {
     const deleteTasks = imagesLocalPath.map(async (imgPath) => {
       try {
-        console.log(imgPath);
         await fs.unlink(this.pathImages+'/'+imgPath);
       } catch (err) {
         if (err.code === 'ENOENT') {
-          console.log("imagen no encontrada");
+          console.error("imagen no encontrada");
         } else {
-         console.log("error al eliminar");
+         console.error("error al eliminar");
         }
       }
     });
