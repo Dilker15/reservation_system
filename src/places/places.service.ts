@@ -5,7 +5,7 @@ import { ImageUploadService } from 'src/image-upload/image-upload.service';
 import { Multer } from 'multer';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Place } from './entities/place.entity';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { User } from 'src/users/entities/user.entity';
 import { Category } from 'src/categories/entities/category.entity';
 import { BookingMode } from 'src/booking-mode/entities/booking-mode.entity';
@@ -23,6 +23,7 @@ export class PlacesService {
               @InjectRepository(BookingMode) private readonly bookinModeRepo:Repository<BookingMode>,
               @InjectRepository(City) private readonly cityRepo:Repository<City>,
               private readonly enqueueImageService:EnqueueImagesUploadServices,
+              private readonly dataSource:DataSource,
               
 
 ){
@@ -73,31 +74,49 @@ export class PlacesService {
 
 
 
-  async addImagesPlace(place_id:string,images:UploadApiResponse[]):Promise<void>{
-      try{
-         const placeFound = await this.placeRepo.findOneBy({id:place_id,status:placeEnumStatus.PROCESSING});
-         if(!placeFound){
-           throw new BadRequestException("Place with id : "+ place_id +" not Found");
-         }
+  async addImagesPlace(place_id: string, images: UploadApiResponse[]): Promise<void> {
+      const queryRunner = this.dataSource.createQueryRunner();
+      await queryRunner.connect();
+      await queryRunner.startTransaction();
+
+      try {
+          const placeRepo = queryRunner.manager.getRepository(Place);
+          const placeImagesRepo = queryRunner.manager.getRepository(PlaceImages);
+
+          const placeFound = await placeRepo.findOneBy({
+            id: place_id,
+            status: placeEnumStatus.PROCESSING,
+          });
+
+          if (!placeFound) {
+            throw new BadRequestException(`Place with id: ${place_id} not found`);
+          }
+
           const imageEntities = images.map(img =>
-                  this.placeImagesRepo.create({
-                    storage_id: img.public_id,
-                    url: img.secure_url,
-                    original_name: img.original_filename,
-                    mime_type: img.format,
-                    size: img.bytes,
-                    place: placeFound,
-                  }),
+            placeImagesRepo.create({
+              storage_id: img.public_id,
+              url: img.secure_url,
+              original_name: img.original_filename,
+              mime_type: img.format,
+              size: img.bytes,
+              place: placeFound,
+            }),
           );
 
-        await this.placeImagesRepo.save(imageEntities);
-        placeFound.status=placeEnumStatus.ACTIVE;
-        await this.placeRepo.save(placeFound);
-      }catch(error){
-         console.log(error);
-         throw error;
+          await placeImagesRepo.save(imageEntities);
+          placeFound.status = placeEnumStatus.ACTIVE;
+          await placeRepo.save(placeFound);
+
+          await queryRunner.commitTransaction();
+      } catch (error) {
+          await queryRunner.rollbackTransaction();
+          console.error(`Transaction failed for place ${place_id}`, error);
+          throw error;
+      } finally {
+          await queryRunner.release();
       }
   }
+
 
 
 
