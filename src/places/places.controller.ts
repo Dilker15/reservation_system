@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseInterceptors, UploadedFiles } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseInterceptors, UploadedFiles, Query, ParseUUIDPipe } from '@nestjs/common';
 import { PlacesService } from './places.service';
 import { CreatePlaceDto } from './dto/create-place.dto';
 import { UpdatePlaceDto } from './dto/update-place.dto';
@@ -8,6 +8,9 @@ import { ImageUploadInterceptor } from 'src/common/interceptors/response/images.
 import { ImageLocalService } from 'src/common/helpers/imageLocalService';
 import { GetUser } from 'src/auth/decorators/getUser.decorator';
 import { User } from 'src/users/entities/user.entity';
+import { PaginationDto } from 'src/common/dtos/pagination.dto';
+import { Public } from 'src/auth/decorators/public.decorator';
+import { PlaceResponseDto } from './dto/place.response.dto';
 
 
 @Controller('places')
@@ -22,30 +25,33 @@ export class PlacesController {
     return this.placesService.create(createPlaceDto,routeImages,currentUser);
   }
 
-
-
+  @Public()
   @Get()
-  findAll() {
-    return this.placesService.findAll();
+  findAll(@Query() paginationDto:PaginationDto) {
+    return this.placesService.findAll(paginationDto);
   }
 
+
+  @Public()
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.placesService.findOne(+id);
+  async findOne(@Param('id',ParseUUIDPipe) placeId:string):Promise<PlaceResponseDto>{
+     return this.placesService.findOne(placeId);
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updatePlaceDto: UpdatePlaceDto) {
-    return this.placesService.update(+id, updatePlaceDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.placesService.remove(+id);
+  @Role(Roles.OWNER)
+  @Get('/owners/me/')
+  async getPlacesOwner(@GetUser() owner:User){
+      return this.placesService.getMyPlaces(owner);
   }
 
 
- 
+
+
+
+
+
+
+
 
 
 }
