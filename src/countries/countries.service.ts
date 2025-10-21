@@ -6,19 +6,24 @@ import { Repository } from 'typeorm';
 import { City } from './entities/city.entity';
 import { CountryResponseDto } from './dto/country-response';
 import { plainToInstance } from 'class-transformer';
+import { AppLoggerService } from 'src/logger/logger.service';
 
 @Injectable()
 export class CountriesService {
-  constructor(@InjectRepository(Country) private readonly countryRepositry:Repository<Country>,
-              @InjectRepository(City) private readonly cityRepository:Repository<City>
-  ){
 
+  private logger:AppLoggerService;
+  constructor(@InjectRepository(Country) private readonly countryRepositry:Repository<Country>,
+              @InjectRepository(City) private readonly cityRepository:Repository<City>,
+              private readonly loggerService:AppLoggerService,
+  ){
+    this.logger = loggerService.withContext(CountriesService.name);
   }
 
 
 async insertCountriesAndCities() {
   const exist = await this.countryRepositry.count();
   if (exist > 0) {
+    this.logger.warn('countries already exist in DB');
     throw new BadRequestException('Countries already exist');
   }
 
@@ -56,6 +61,7 @@ private async insertCities(country: Country, cities: { name: string }[]) {
       where: { id, is_active: true },
     });
     if(!country){
+       this.logger.warn("country with id not found in DB : " + id);
        throw new BadRequestException("Country not Found");
     }
     return this.parseCountryResponse(country);
@@ -76,6 +82,7 @@ private async insertCities(country: Country, cities: { name: string }[]) {
       .getOne();
   
     if (!country) {
+      this.logger.warn("country with id not found in DB , findCitiesFromCountry(): " + countryId);
       throw new BadRequestException('Country not found');
     }
   
@@ -94,6 +101,7 @@ private async insertCities(country: Country, cities: { name: string }[]) {
       .getOne();
   
     if (!city) {
+      this.logger.warn("country or city with id not found in DB , findCity(): " + id_city +" - "+ id_country);
       throw new BadRequestException('City not found or country is inactive');
     }
   

@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, LoggerService } from '@nestjs/common';
 import { ClientRegisterStrategy } from './strategies/client-register.strategy';
 import { AdminRegisterStrategy } from './strategies/admin-register.strategy';
 import { RegisterDto } from './dto/register-auth-dto';
@@ -15,9 +15,13 @@ import { LoginResponseDto } from './dto/login-response.dto';
 import { EmailsService } from 'src/emails/emails.service';
 import { EnqueueMailServices } from 'src/queue-bull/enqueue-mail-services';
 import { ConfigService } from '@nestjs/config';
+import { AppLoggerService } from 'src/logger/logger.service';
+import { error } from 'console';
 
 @Injectable()
 export class AuthService {
+
+    private logger: AppLoggerService;
 
   constructor(
     private readonly clienteStrategy:ClientRegisterStrategy,
@@ -26,7 +30,9 @@ export class AuthService {
     private readonly bcryptService:BcryptService,
     private readonly jwtService:JwtService,
     private readonly conf:ConfigService,
+    private readonly loggerService:AppLoggerService,
   ){
+     this.logger = loggerService.withContext(AuthService.name);
   }
   async create(createAuthDto:RegisterDto):Promise<UserResponseDto> {
     switch(createAuthDto.role){
@@ -35,6 +41,7 @@ export class AuthService {
           case Roles.CLIENT:
                 return await this.clienteStrategy.register(createAuthDto as ClientDto,Roles.CLIENT);    
           default:
+            this.logger.error("error create user with incorrect role");
             throw new BadRequestException("Error: Role User");
         }
   }
@@ -44,9 +51,11 @@ export class AuthService {
      const userFound = await this.userServices.findUserQuery(loginDto.email,{email_verified:true,is_active:true});
      const comparedPassword =  await this.bcryptService.verifyPassword(loginDto.password,userFound.password);
      if(!comparedPassword){
+        this.logger.warn("failed user loggin : passwor wrong : " + userFound.email);
         throw new BadRequestException(`Email or password wrong`);
      }
      const token = await this.signJWToken({role:userFound.role,sub:userFound.id});
+     this.logger.log("login successfully : "+loginDto.email)
      return {...this.loginResponse(userFound),token}
   }
 

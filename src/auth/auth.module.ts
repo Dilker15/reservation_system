@@ -10,6 +10,7 @@ import { EmailsModule } from 'src/emails/emails.module';
 import { PassportModule } from '@nestjs/passport';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtStrategy } from './strategies/JwtStrategy';
+import { AppLoggerModule } from 'src/logger/logger.module';
 
 
 @Module({
@@ -19,6 +20,7 @@ import { JwtStrategy } from './strategies/JwtStrategy';
     UsersModule,
     EmailsModule,
     ConfigModule,
+    AppLoggerModule,
     PassportModule.register({defaultStrategy:'jwt'}),
     JwtModule.registerAsync({
       imports:[ConfigModule],

@@ -3,11 +3,16 @@ import { Transporter } from 'nodemailer';
 import path from 'path';
 import * as fs from 'fs/promises';
 import { EMAIL_TYPE } from 'src/common/Interfaces';
+import { AppLoggerService } from 'src/logger/logger.service';
 
 @Injectable()
 export class EmailsService {
 
-  constructor(@Inject('MAIL_TRANSPORT') private readonly transporter: Transporter) {}
+  private logger:AppLoggerService;
+
+  constructor(@Inject('MAIL_TRANSPORT') private readonly transporter: Transporter,private readonly loggerService:AppLoggerService) {
+    this.logger = this.loggerService.withContext(EmailsService.name);
+  }
 
 
   
@@ -34,6 +39,7 @@ export class EmailsService {
       });
     } catch (error) {
       //console.error('Error sending email:', error);
+      this.logger.error("Email sending error to email : "+ to,error.trace);
       throw new InternalServerErrorException(`Email was not sent to: ${to}`);
     }
   }

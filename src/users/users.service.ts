@@ -9,21 +9,26 @@ import { GeneratorCodeService } from 'src/common/helpers/codeGenerator';
 import { plainToInstance } from 'class-transformer';
 import { EMAIL_TYPE, Roles } from 'src/common/Interfaces';
 import { EnqueueMailServices } from 'src/queue-bull/enqueue-mail-services';
+import { AppLoggerService } from 'src/logger/logger.service';
 
 @Injectable()
 export class UsersService {
+
+  private logger:AppLoggerService;
 
   constructor(@InjectRepository(User) private readonly userRepository:Repository<User>,
               private readonly generatorCode:GeneratorCodeService,
               private readonly bcrypService:BcryptService,
               private readonly enqueMailService:EnqueueMailServices,
+              private readonly appLogServ:AppLoggerService,
 ){
-
+    this.logger = this.appLogServ.withContext(UsersService.name)
   }
 
   async create(createUserDto: RegisterDto,userRole:Roles):Promise<UserResponseDto> {
     const userFound = await this.userRepository.findOne({where:{email:createUserDto.email}});
     if(userFound){
+      this.logger.warn("User with email not found : "+ createUserDto.email);
        throw new ConflictException(`User with email ${createUserDto.email} already exists`);
     }
     const passwordGenerated = await this.bcrypService.hashPassword(createUserDto.password);
@@ -31,9 +36,10 @@ export class UsersService {
     const user = this.userRepository.create({...createUserDto,password:passwordGenerated,verification_code:codeGenerated,role:userRole});
     const userCreated = await this.userRepository.save(user);
     await this.enqueMailService.enqueEmail(EMAIL_TYPE.VERIFICATION_CODE,{to:userCreated.email,data:{code:codeGenerated}});
+    this.logger.log("User created succesfully");
     return this.toUserResponse(userCreated);
   
-  }
+  } 
 
   
   async findUserQuery(email:string,querySearch:FindOptionsWhere<User>={}):Promise<User>{
@@ -45,6 +51,7 @@ export class UsersService {
     }
     const userFound = await this.userRepository.findOne(query);
     if(!userFound){
+       this.logger.warn("User with email not found : "+ email);
       throw new NotFoundException(`User with email ${email} not found`);
     }
     return userFound;
@@ -60,6 +67,7 @@ export class UsersService {
   async findUserValidById(id:string):Promise<User>{
     const user = await this.userRepository.findOneBy({id});
     if(!user || !user.is_active || !user.email_verified){
+       this.logger.warn("User with id not found  : "+ id);
      throw new UnauthorizedException('User not found or inactive');
 
     }
