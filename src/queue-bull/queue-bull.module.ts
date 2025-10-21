@@ -8,6 +8,7 @@ import { ImageUploadModule } from 'src/image-upload/image-upload.module';
 import { ImageUploadProcessor } from './queue-images-upload.processor';
 import { ImageLocalService } from 'src/common/helpers/imageLocalService';
 import { PlacesModule } from 'src/places/places.module';
+import { AppLoggerModule } from 'src/logger/logger.module';
 
 @Module({
   imports:[
@@ -21,7 +22,8 @@ import { PlacesModule } from 'src/places/places.module';
 
   ),
     EmailsModule,
-    ImageUploadModule, 
+    ImageUploadModule,
+    AppLoggerModule,
     forwardRef(() => PlacesModule),
   ],
   providers: [EnqueueMailServices,MailsProcessor,EnqueueImagesUploadServices,ImageUploadProcessor,ImageLocalService],

@@ -8,9 +8,12 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth-guards';
 import { seedCategory } from './shared/seeders/category.seeder';
 import { DataSource } from 'typeorm';
 import { seedBookingMode } from './shared/seeders/booking-mode.seeder';
+import { AppLoggerService } from './logger/logger.service';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule,{
+    bufferLogs:true,
+  });
   const reflector = app.get(Reflector);
   app.setGlobalPrefix('/api/v1/reservations');
   app.useGlobalPipes(new ValidationPipe({
@@ -32,8 +35,12 @@ async function bootstrap() {
 
     const document = SwaggerModule.createDocument(app, config);
     SwaggerModule.setup('api/docs',app, document);
-     const dataSource = app.get(DataSource);
-    Promise.all([seedCategory(dataSource),seedBookingMode(dataSource)])
+    const dataSource = app.get(DataSource);
+    Promise.all([seedCategory(dataSource),seedBookingMode(dataSource)]);
+    const logger = app.get(AppLoggerService);
+    app.useLogger(logger);
+
+    
     await app.listen(process.env.APP_PORT ?? 4000);
 
 

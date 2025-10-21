@@ -4,13 +4,15 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ConfigOptions,v2 as cloudinary } from 'cloudinary';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { PlaceImages } from 'src/places/entities/place-images.entity';
+import { AppLoggerModule } from 'src/logger/logger.module';
 
 
 @Module({
-  imports:[ConfigModule,TypeOrmModule.forFeature([PlaceImages])],
+  imports:[ConfigModule,TypeOrmModule.forFeature([PlaceImages]),AppLoggerModule],
   controllers: [],
   providers: [
     ImageUploadService,
+    
     {
       provide: 'CLOUDINARY',
       inject: [ConfigService],

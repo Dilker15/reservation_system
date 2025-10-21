@@ -2,6 +2,7 @@ import { Processor, WorkerHost } from "@nestjs/bullmq";
 import { Job } from "bullmq";
 import { ImageLocalService } from "src/common/helpers/imageLocalService";
 import { ImageUploadService } from "src/image-upload/image-upload.service";
+import { AppLoggerService } from "src/logger/logger.service";
 import { PlacesService } from "src/places/places.service";
 
 
@@ -11,8 +12,14 @@ import { PlacesService } from "src/places/places.service";
 @Processor('imageupload-queue')
 export class ImageUploadProcessor extends WorkerHost{
 
-    constructor(private readonly uploadImageServices:ImageUploadService,private readonly imageLocal:ImageLocalService,private readonly placeService:PlacesService){
+    private logger:AppLoggerService;
+
+    constructor(private readonly uploadImageServices:ImageUploadService,private readonly imageLocal:ImageLocalService,
+        private readonly placeService:PlacesService,
+        private readonly appLogServ:AppLoggerService
+    ){
         super();
+        this.logger = this.appLogServ.withContext(ImageUploadProcessor.name);
     }
 
 
@@ -23,8 +30,9 @@ export class ImageUploadProcessor extends WorkerHost{
             this.imageLocal.removeImageDisk(job.data.imagesRoutes),
             this.placeService.addImagesPlace(job.data.place_id, imagesUploaded),
             ]);
+            this.logger.log("images processed successfully");
         }catch (error) {
-            console.error('Error imageupload-queue:', error);
+            this.logger.error("images processed failed ", error.stack || 'trace not found');
             throw error; 
         }
     }

@@ -2,10 +2,11 @@ import { Module, Global } from '@nestjs/common';
 import * as nodemailer from 'nodemailer';
 import { EmailsService } from './emails.service';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { AppLoggerModule } from 'src/logger/logger.module';
 
 
 @Module({
-  imports: [ConfigModule],
+  imports: [ConfigModule,AppLoggerModule],
   providers: [
     EmailsService,
     {
