@@ -1,4 +1,4 @@
-import { Expose } from "class-transformer";
+import { Expose, Type } from "class-transformer";
 
 
 export class CountryResponseDto{
@@ -11,4 +11,20 @@ export class CountryResponseDto{
 
     @Expose()
     country_code:string;
+}
+
+
+export class CityResponseDto{
+
+    @Expose()
+    id:string;
+
+    @Expose()
+    name:string;
+
+
+    @Expose()
+    @Type(()=>CountryResponseDto)
+    country:CountryResponseDto;
+
 }

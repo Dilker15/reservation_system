@@ -54,7 +54,7 @@ export class AuthService {
   
 
   private async signJWToken(payload: payloadToken): Promise<string> {
-    return this.jwtService.signAsync(payload,{secret:this.conf.get<string>('SEED_TOKEN'),expiresIn:this.conf.get<string>('EXPIRATION_TOKEN')});
+    return this.jwtService.signAsync(payload);
   }
 
 

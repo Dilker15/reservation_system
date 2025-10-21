@@ -26,7 +26,7 @@ import { JwtStrategy } from './strategies/JwtStrategy';
       useFactory:(config:ConfigService)=>({
         secret: config.get<string>('SEED_TOKEN'),
         signOptions:{
-          expiresIn:config.get<string>('EXPIRATION_TOKEN'),
+          expiresIn:config.get<string>('EXPIRATION_TOKEN') as any,
         }
       }),
     })
