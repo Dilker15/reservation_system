@@ -1,8 +1,5 @@
-import { BadRequestException, Inject, Injectable } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, InternalServerErrorException } from '@nestjs/common';
 import { CreatePlaceDto } from './dto/create-place.dto';
-import { UpdatePlaceDto } from './dto/update-place.dto';
-import { ImageUploadService } from 'src/image-upload/image-upload.service';
-import { Multer } from 'multer';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Place } from './entities/place.entity';
 import { DataSource, Repository } from 'typeorm';
@@ -14,6 +11,9 @@ import { EnqueueImagesUploadServices } from 'src/queue-bull/enqueue-images.servi
 import { UploadApiResponse } from 'cloudinary';
 import { placeEnumStatus } from './interfaces/interfaces';
 import { PlaceImages } from './entities/place-images.entity';
+import { PaginationDto } from 'src/common/dtos/pagination.dto';
+import { PlaceResponseDto } from './dto/place.response.dto';
+import { plainToInstance } from 'class-transformer';
 
 @Injectable()
 export class PlacesService {
@@ -24,8 +24,6 @@ export class PlacesService {
               @InjectRepository(City) private readonly cityRepo:Repository<City>,
               private readonly enqueueImageService:EnqueueImagesUploadServices,
               private readonly dataSource:DataSource,
-              
-
 ){
   }
 
@@ -42,20 +40,49 @@ export class PlacesService {
     }
   }
 
-  findAll() {
-    return `This action returns all places`;
+  async findAll(queryParams:PaginationDto) {
+    const {limit=10,page=1} = queryParams;
+    try{
+      const querySql = this.buildQueryFilterPlaces(queryParams);
+      querySql.limit(limit)
+               .offset(limit*(page-1));
+      const [data,total]= await querySql.getManyAndCount();
+      return {total,page,limit,data}
+    }catch(error){
+      console.error(error);
+      throw new InternalServerErrorException("Something was wrong get places");
+    }
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} place`;
+
+  async getMyPlaces(owner:User){
+    try{
+        const placesFound = await this.placeRepo.find({where:{owner: { id: owner.id},status:placeEnumStatus.ACTIVE}});
+        return placesFound;
+    }catch(error){
+      console.log(error);
+      throw new InternalServerErrorException("Something was wrong");
+    }
   }
 
-  update(id: number, updatePlaceDto: UpdatePlaceDto) {
-    return `This action updates a #${id} place`;
-  }
 
-  remove(id: number) {
-    return `This action removes a #${id} place`;
+  async findOne(placeId:string):Promise<PlaceResponseDto>{
+    try{
+        const placeFound = await this.placeRepo.findOne({
+            where:{id:placeId,status:placeEnumStatus.ACTIVE},
+            relations:['images','category','city','city.country','booking_mode']   
+        });
+      if(!placeFound){
+          throw new BadRequestException(`Place with ${placeId} : not Found`);
+      }
+      return this.createPlaceResponseDto(placeFound);
+    }catch(error){
+       console.log(error);
+       if(error instanceof BadRequestException){
+          throw error;
+       }
+       throw new InternalServerErrorException("Something was wrong");
+    }
   }
 
 
@@ -64,7 +91,6 @@ export class PlacesService {
         this.bookinModeRepo.findOneBy({ id: booking_id }),
         this.categoryRepo.findOneBy({ id: category_id }),
       ]);
-
       if (!city || !booking || !category) {
         throw new BadRequestException("Invalid city, booking mode, or category ID.");
       }
@@ -78,20 +104,16 @@ export class PlacesService {
       const queryRunner = this.dataSource.createQueryRunner();
       await queryRunner.connect();
       await queryRunner.startTransaction();
-
       try {
           const placeRepo = queryRunner.manager.getRepository(Place);
           const placeImagesRepo = queryRunner.manager.getRepository(PlaceImages);
-
           const placeFound = await placeRepo.findOneBy({
             id: place_id,
             status: placeEnumStatus.PROCESSING,
           });
-
           if (!placeFound) {
             throw new BadRequestException(`Place with id: ${place_id} not found`);
           }
-
           const imageEntities = images.map(img =>
             placeImagesRepo.create({
               storage_id: img.public_id,
@@ -118,7 +140,42 @@ export class PlacesService {
   }
 
 
+  private buildQueryFilterPlaces(queryParams:PaginationDto,owner?:string){
+      const querySql = this.placeRepo.createQueryBuilder('place')
+      .innerJoin("place.category",'cat')
+      .innerJoin("place.city","cit")
+      .innerJoin("place.booking_mode","bmod")
+      /*if(owner){
+        querySql.innerJoin('place.owner','own').andWhere('own.id = :ownerId',{ownerId:owner});
+      }*/
+      
+      if(queryParams.category){
+        querySql.andWhere('cat.id = :idCategory',{idCategory:queryParams.category})
+      }
+      if(queryParams.city){
+        querySql.andWhere('cit.id = :idCity',{idCity:queryParams.city});
+      }
+      if(queryParams.reservation_mode){
+        querySql.andWhere('bmod.id = :idBooking',{idBooking:queryParams.reservation_mode});
+      }
 
+      if(queryParams.min_price){
+        querySql.andWhere("place.price >= :minPrice",{minPrice:queryParams.min_price});
+      }
+      if(queryParams.max_price){
+        querySql.andWhere("place.price <= :maxPrice",{maxPrice:queryParams.max_price})
+      }
+      
+      querySql.where('place.status = :myStatus',{myStatus:'active'});
+    return querySql;
+  }
+
+
+
+
+  private createPlaceResponseDto(placesData:Place){
+    return plainToInstance(PlaceResponseDto,placesData,{excludeExtraneousValues:true});
+  }
 
 
 }
