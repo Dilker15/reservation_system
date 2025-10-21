@@ -12,10 +12,12 @@ import { Category } from 'src/categories/entities/category.entity';
 import { BookingMode } from 'src/booking-mode/entities/booking-mode.entity';
 import { EnqueueImagesUploadServices } from 'src/queue-bull/enqueue-images.services';
 import { QueueBullModule } from 'src/queue-bull/queue-bull.module';
+import { AppLoggerModule } from 'src/logger/logger.module';
 
 @Module({
   imports:[TypeOrmModule.forFeature([Place,City,PlaceImages,Category,BookingMode]),
             forwardRef(() => QueueBullModule),
+            AppLoggerModule,
 ],
   controllers: [PlacesController],
   providers: [PlacesService,ImageLocalService],

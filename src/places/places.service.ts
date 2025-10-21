@@ -11,12 +11,14 @@ import { EnqueueImagesUploadServices } from 'src/queue-bull/enqueue-images.servi
 import { UploadApiResponse } from 'cloudinary';
 import { placeEnumStatus } from './interfaces/interfaces';
 import { PlaceImages } from './entities/place-images.entity';
-import { PaginationDto } from 'src/common/dtos/pagination.dto';
+import { AppLoggerService } from 'src/logger/logger.service';
 import { PlaceResponseDto } from './dto/place.response.dto';
+import { PaginationDto } from 'src/common/dtos/pagination.dto';
 import { plainToInstance } from 'class-transformer';
 
 @Injectable()
 export class PlacesService {
+  private logger : AppLoggerService;
   constructor(@InjectRepository(Place) private readonly placeRepo:Repository<Place>,
               @InjectRepository(PlaceImages) private readonly placeImagesRepo:Repository<PlaceImages>
               ,@InjectRepository(Category) private readonly categoryRepo:Repository<Category>,
@@ -24,7 +26,11 @@ export class PlacesService {
               @InjectRepository(City) private readonly cityRepo:Repository<City>,
               private readonly enqueueImageService:EnqueueImagesUploadServices,
               private readonly dataSource:DataSource,
+              private readonly appLogService:AppLoggerService,
+              
+
 ){
+  this.logger = appLogService.withContext(PlacesService.name);
   }
 
   async create(createPlaceDto: CreatePlaceDto,pathImages:string[],user:User) {
@@ -33,9 +39,10 @@ export class PlacesService {
        const placetoCreate = this.placeRepo.create({...createPlaceDto,city:cityData,booking_mode:bookingData,category:categoryData,owner:user});
        const placeCreated = await this.placeRepo.save(placetoCreate);
        await this.enqueueImageService.enqueImagesToUpload(placeCreated.id,pathImages);
+       this.logger.log('places created successfully')
        return placeCreated;
     }catch(error){
-      console.log(error);
+      this.logger.error("Error create place ", error?.stack || 'No stack trace');
       throw error;
     }
   }
@@ -92,6 +99,7 @@ export class PlacesService {
         this.categoryRepo.findOneBy({ id: category_id }),
       ]);
       if (!city || !booking || !category) {
+        this.logger.warn("city , booking o category not exist getInformationToCompletePlace() ")
         throw new BadRequestException("Invalid city, booking mode, or category ID.");
       }
       return [city, booking, category];
@@ -112,6 +120,7 @@ export class PlacesService {
             status: placeEnumStatus.PROCESSING,
           });
           if (!placeFound) {
+            this.logger.warn("place not with id : "+place_id +" not found")
             throw new BadRequestException(`Place with id: ${place_id} not found`);
           }
           const imageEntities = images.map(img =>
@@ -128,11 +137,11 @@ export class PlacesService {
           await placeImagesRepo.save(imageEntities);
           placeFound.status = placeEnumStatus.ACTIVE;
           await placeRepo.save(placeFound);
-
+          this.logger.log("imagePlaces added succesfully");
           await queryRunner.commitTransaction();
       } catch (error) {
           await queryRunner.rollbackTransaction();
-          console.error(`Transaction failed for place ${place_id}`, error);
+          this.logger.error(`Transaction failed for add Imageplace rollback executed ${place_id}`, error?.stack || 'No stack trace')
           throw error;
       } finally {
           await queryRunner.release();
