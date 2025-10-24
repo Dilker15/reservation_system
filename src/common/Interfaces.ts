@@ -35,3 +35,10 @@ export enum BookingName {
    PER_MONTH = 'per month',
 };
 
+
+
+
+export enum JobNameImages {
+  UPLOADIMAGES = "upload-images-cloud",
+  DELETEIMAGES = "delete-images-cloud"
+}
