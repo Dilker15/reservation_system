@@ -45,7 +45,7 @@ export class PlaceResponseDto {
 
   @Expose()
   @Type(()=>BookingModeResponseDto)
-  booking:BookingModeResponseDto;
+  booking_mode:BookingModeResponseDto;
 
 
   @Expose()

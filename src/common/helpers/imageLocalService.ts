@@ -1,8 +1,7 @@
 import { Injectable, NotImplementedException } from "@nestjs/common";
 import { promises as fs } from 'fs';
-import { Multer } from "multer";
-import path, { join } from 'path';
-
+import { join } from 'path';
+import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
 export class ImageLocalService{
@@ -10,18 +9,20 @@ export class ImageLocalService{
     private readonly pathImages:string = join(process.cwd(), 'uploads', 'images','places');
     
     async saveImagesToDisk(images: Express.Multer.File[]): Promise<string[]> {
-          
-          await fs.mkdir(this.pathImages, { recursive: true });
-          
-          const savedPaths: string[] = [];
+          try{
+            await fs.mkdir(this.pathImages, { recursive: true });
+            const savedPaths: string[] = [];
           
           for (const image of images) {
-            const filename:string = `${Date.now()}-${image.originalname}`;
+            const filename:string = `${uuidv4()}-${image.originalname}`;
             const filepath = join(this.pathImages, filename);
             await fs.writeFile(filepath, image.buffer);
             savedPaths.push(filename);
           }
-          return savedPaths;
+           return savedPaths;
+          }catch(error){
+            throw error;
+          }
     }
 
 

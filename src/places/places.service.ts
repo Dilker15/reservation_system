@@ -15,6 +15,8 @@ import { AppLoggerService } from 'src/logger/logger.service';
 import { PlaceResponseDto } from './dto/place.response.dto';
 import { PaginationDto } from 'src/common/dtos/pagination.dto';
 import { plainToInstance } from 'class-transformer';
+import { UpdatePlaceDto } from './dto/update-place.dto';
+import { ImageLocalService } from 'src/common/helpers/imageLocalService';
 
 @Injectable()
 export class PlacesService {
@@ -35,15 +37,14 @@ export class PlacesService {
 
   async create(createPlaceDto: CreatePlaceDto,pathImages:string[],user:User) {
     try{
-       const [cityData,bookingData,categoryData] = await this.getInformationToCompletePlace(createPlaceDto.category_id,createPlaceDto.booking_mode_id,createPlaceDto.city_id);
+       const [cityData,bookingData,categoryData] = await this.getInformationToCreatePlace(createPlaceDto.category_id,createPlaceDto.booking_mode_id,createPlaceDto.city_id);
        const placetoCreate = this.placeRepo.create({...createPlaceDto,city:cityData,booking_mode:bookingData,category:categoryData,owner:user});
        const placeCreated = await this.placeRepo.save(placetoCreate);
        await this.enqueueImageService.enqueImagesToUpload(placeCreated.id,pathImages);
        this.logger.log('places created successfully')
        return placeCreated;
     }catch(error){
-      this.logger.error("Error create place ", error?.stack || 'No stack trace');
-      throw error;
+      this.throwCommonError(error,"Error cretae Place Somehting was wrong");
     }
   }
 
@@ -56,7 +57,6 @@ export class PlacesService {
       const [data,total]= await querySql.getManyAndCount();
       return {total,page,limit,data}
     }catch(error){
-      console.error(error);
       throw new InternalServerErrorException("Something was wrong get places");
     }
   }
@@ -67,24 +67,26 @@ export class PlacesService {
         const placesFound = await this.placeRepo.find({where:{owner: { id: owner.id},status:placeEnumStatus.ACTIVE}});
         return placesFound;
     }catch(error){
-      console.log(error);
-      throw new InternalServerErrorException("Something was wrong");
+      this.throwCommonError(error,"Something was wrong getMyPlaces");
     }
   }
 
 
-  async findOne(placeId:string):Promise<PlaceResponseDto>{
+  async findOne(placeId:string,currentOwner?:User):Promise<PlaceResponseDto>{     // IF EXIST PLACE RETURN, OR THROW EXCEPTION
+    let queryUser;
+    if(currentOwner){
+       queryUser = {owner:{id:currentOwner.id}};
+    }
     try{
         const placeFound = await this.placeRepo.findOne({
-            where:{id:placeId,status:placeEnumStatus.ACTIVE},
-            relations:['images','category','city','city.country','booking_mode']   
+            where:{id:placeId,status:placeEnumStatus.ACTIVE,...queryUser},
+            relations:['images','category','booking_mode','city','city.country'],
         });
       if(!placeFound){
           throw new BadRequestException(`Place with ${placeId} : not Found`);
       }
       return this.createPlaceResponseDto(placeFound);
     }catch(error){
-       console.log(error);
        if(error instanceof BadRequestException){
           throw error;
        }
@@ -93,13 +95,78 @@ export class PlacesService {
   }
 
 
-  private async getInformationToCompletePlace(category_id: string,booking_id: string,city_id: string):Promise<[City, BookingMode, Category]> {
+  async updateBasicInformation(updatePlaceDto:UpdatePlaceDto,place_id:string,ownerPlace:User){
+    try{
+       const placeFound = await this.findOne(place_id,ownerPlace)
+       if(!placeFound){
+          this.logger.warn("place not found or inactive with id : "+place_id);
+          throw new BadRequestException("Place Not Found");
+       }
+     await this.placeRepo.update(place_id, {
+            ...updatePlaceDto,
+            updated_at:new Date(),
+     });
+     console.log(updatePlaceDto);
+     console.log(placeFound);
+      
+      return placeFound;
+    }catch(error:unknown){
+      this.throwCommonError(error,"Error on updateBasic Information place");
+    }
+  }
+
+
+  async updateImages(place_id:string,owner:User,filesToUpdate:string[]){
+      try{
+         const placeToUpdate  = await this.findOne(place_id,owner);
+         if(!placeToUpdate){
+           throw new BadRequestException("Place not Found or owner Incorrect");
+         }
+         const count = placeToUpdate.images.length
+         if(count + filesToUpdate.length> 5){
+            throw new BadRequestException("Max number of files accepted 5");
+         }
+         await this.enqueueImageService.enqueImageToRemove(place_id,filesToUpdate);
+         this.logger.log("Images to update enqueued successfully");
+         return count;
+      }catch(error){
+        
+         this.throwCommonError(error,"Error on UpdateImages place");
+      }
+  }
+
+
+  async updateCategory(place_id:string,category_id:string,owner:User){
+        const categoryFound = await this.categoryRepo.findOneBy({id:category_id,is_active:true});
+        if(!categoryFound){
+          throw new BadRequestException("Category not found");
+        }
+        const placeFound = await this.findOne(place_id,owner);
+        await this.placeRepo.update(place_id,{category:categoryFound});
+        return placeFound;
+  }
+
+
+
+  async updateBookingMode(place_id:string,newBooking_id:string,owner:User){
+     const bookingFound = await this.bookinModeRepo.findOneBy({id:newBooking_id,is_active:true});
+     if(!bookingFound){
+       throw new BadRequestException("Booking Mode to update not found");
+     }
+    const placeFound = await this.findOne(place_id,owner); // IT VERIFY IF EXIST PLACE TOO.
+    console.log(placeFound);
+    await this.placeRepo.update(place_id,{booking_mode:bookingFound});
+    return placeFound;
+  }  
+
+
+  private async getInformationToCreatePlace(category_id: string,booking_id: string,city_id: string):Promise<[City, BookingMode, Category]> {
       const [city, booking, category] = await Promise.all([this.cityRepo.findOneBy({ id: city_id }),
         this.bookinModeRepo.findOneBy({ id: booking_id }),
         this.categoryRepo.findOneBy({ id: category_id }),
       ]);
       if (!city || !booking || !category) {
-        this.logger.warn("city , booking o category not exist getInformationToCompletePlace() ")
+        this.logger.warn("city , booking o category not exist getInformationToCompletePlace() ");
         throw new BadRequestException("Invalid city, booking mode, or category ID.");
       }
       return [city, booking, category];
@@ -154,9 +221,6 @@ export class PlacesService {
       .innerJoin("place.category",'cat')
       .innerJoin("place.city","cit")
       .innerJoin("place.booking_mode","bmod")
-      /*if(owner){
-        querySql.innerJoin('place.owner','own').andWhere('own.id = :ownerId',{ownerId:owner});
-      }*/
       
       if(queryParams.category){
         querySql.andWhere('cat.id = :idCategory',{idCategory:queryParams.category})
@@ -175,7 +239,7 @@ export class PlacesService {
         querySql.andWhere("place.price <= :maxPrice",{maxPrice:queryParams.max_price})
       }
       
-      querySql.where('place.status = :myStatus',{myStatus:'active'});
+      querySql.andWhere('place.status = :myStatus',{myStatus:'active'});
     return querySql;
   }
 
@@ -186,5 +250,18 @@ export class PlacesService {
     return plainToInstance(PlaceResponseDto,placesData,{excludeExtraneousValues:true});
   }
 
+
+
+  private throwCommonError(error:any,messageError:string){
+     if (error instanceof BadRequestException) {
+       this.logger.warn(messageError);
+        throw error;
+      }
+     if (error instanceof Error) {
+      throw new BadRequestException(error.message);
+     }
+     this.logger.error(messageError,error.stack || 'trace not found on updatePlace');
+     throw new BadRequestException('Unexpected error occurred');
+  }
 
 }
