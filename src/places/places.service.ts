@@ -115,6 +115,7 @@ export class PlacesService {
     }
   }
 
+  
 
   async updateImages(place_id:string,owner:User,filesToUpdate:string[]){
       try{
@@ -124,13 +125,13 @@ export class PlacesService {
          }
          const count = placeToUpdate.images.length
          if(count + filesToUpdate.length> 5){
-            throw new BadRequestException("Max number of files accepted 5");
+            throw new BadRequestException("Max number of total files accepted 5,remove files");
          }
-         await this.enqueueImageService.enqueImageToRemove(place_id,filesToUpdate);
+         await this.enqueueImageService.enqueImageToUpdate(place_id,filesToUpdate,owner.id);
          this.logger.log("Images to update enqueued successfully");
-         return count;
+         return { message: `images will be updated (${placeToUpdate.images.length} total)` };
+
       }catch(error){
-        
          this.throwCommonError(error,"Error on UpdateImages place");
       }
   }
@@ -158,6 +159,11 @@ export class PlacesService {
     await this.placeRepo.update(place_id,{booking_mode:bookingFound});
     return placeFound;
   }  
+
+
+  async deleteImages(place_id:string,image_id:string,owner:User){
+     console.log("DELETED IMAGES");
+  }
 
 
   private async getInformationToCreatePlace(category_id: string,booking_id: string,city_id: string):Promise<[City, BookingMode, Category]> {
@@ -214,6 +220,35 @@ export class PlacesService {
           await queryRunner.release();
       }
   }
+
+  async updateImagesPlace(place_id:string, images: UploadApiResponse[]){
+     const queryRun = this.dataSource.createQueryRunner();
+     await queryRun.connect();
+     await queryRun.startTransaction();
+     try{
+
+         await this.findOne(place_id);
+         const imageRepo = queryRun.manager.getRepository(PlaceImages);
+         const imagesToUpdate = images.map((currenImage)=>{
+            return this.placeImagesRepo.create({
+               place:{id:place_id},
+               ...currenImage,
+               storage_id:currenImage.public_id,
+               mime_type:currenImage.format,
+               original_name:currenImage.original_filename,
+            });
+         });
+         await imageRepo.save(imagesToUpdate);
+         queryRun.commitTransaction();
+     }catch(error ){
+        queryRun.rollbackTransaction();
+        this.logger.error("Error on updateImagesPlace()",error.trace);
+        throw error;
+     }
+    
+  }
+
+
 
 
   private buildQueryFilterPlaces(queryParams:PaginationDto,owner?:string){

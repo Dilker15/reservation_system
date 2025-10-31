@@ -28,15 +28,22 @@ export class ImageUploadService implements IImageUpload{
             const results: UploadApiResponse[] = await Promise.all(uploads);
             return results;
         }catch(error){
-          this.logger.error("error uploadImages ",error.trace)
+          this.logger.error("error uploadImages ",error.trace);
           throw new InternalServerErrorException("Something was wrong uploading Images");
         }
   }
 
   
-  deleteImage(publicId: string): Promise<void> {
-    throw new Error('Method not implemented.');
+  async deleteImage(publicId: string): Promise<void> {
+    try{
+       const imageDeleted = await this.cloudinary.uploader.destroy(publicId);
+    }catch(error){
+      this.logger.error("error cloudImages on updateImagePlace()",error.stack);
+      throw error;
+    }
   }
+
+
   getImagesByPlace(placeId: string): Promise<void> {
     throw new Error('Method not implemented.');
   }

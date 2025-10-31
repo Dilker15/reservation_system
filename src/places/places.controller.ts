@@ -52,14 +52,16 @@ export class PlacesController {
   updatePlace(@Body() updateDto:UpdatePlaceDto,@Param('place_id',ParseUUIDPipe) place_id:string,@GetUser() owner:User){
     return this.placesService.updateBasicInformation(updateDto,place_id,owner);
   }
-  
+
+
+
 
 
   @UseInterceptors(ImageUploadInterceptor('imagesToUpdate'))
   @Role(Roles.OWNER)
   @Patch(':place_id/images')
   async updatePlacesImages(@Param('place_id',ParseUUIDPipe) place_id:string,@GetUser() owner:User,@UploadedFiles() imagesToUpdate:Express.Multer.File[]){
-    const imagesRoutes = await this.imageLocalService.saveImagesToDisk(imagesToUpdate);
+    const imagesRoutes = await this.imageLocalService.saveImagesToDisk(imagesToUpdate); 
     return this.placesService.updateImages(place_id,owner,imagesRoutes);
   }
 
@@ -81,10 +83,20 @@ export class PlacesController {
   }
 
 
+  
+
+  @Role(Roles.OWNER)
+  @Delete(":place_id/images")
+  deleteImageFromPlace(@Param('place_id',ParseUUIDPipe) place_id:string,@Body('image_id') image_id:string,@GetUser() owner:User){
+    return this.placesService.deleteImages(place_id,image_id,owner);
+  }
+
+
+
+
   @Role(Roles.OWNER)
   @Patch(":place_id/location/")
   updatePlaceLocation(@Body('city_id',ParseUUIDPipe) city_id:string,@GetUser() owner:User){
-
   }
 
 

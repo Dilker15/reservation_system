@@ -28,8 +28,12 @@ import { ImageUploadModule } from './image-upload/image-upload.module';
          host:config.get<string>('DB_HOST'),
          username:config.get<string>('DB_USERNAME'),
          password:config.get<string>('DB_PASSWORD'),
+          /*ssl: {
+            rejectUnauthorized: false,
+          },*/
          synchronize:true,
          autoLoadEntities:true,
+         
       })
     }),
     BullModule.forRootAsync({
