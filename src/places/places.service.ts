@@ -17,6 +17,7 @@ import { PaginationDto } from 'src/common/dtos/pagination.dto';
 import { plainToInstance } from 'class-transformer';
 import { UpdatePlaceDto } from './dto/update-place.dto';
 import { ImageLocalService } from 'src/common/helpers/imageLocalService';
+import { LocationsService } from 'src/locations/locations.service';
 
 @Injectable()
 export class PlacesService {
@@ -29,10 +30,11 @@ export class PlacesService {
               private readonly enqueueImageService:EnqueueImagesUploadServices,
               private readonly dataSource:DataSource,
               private readonly appLogService:AppLoggerService,
+              private readonly locationService:LocationsService,
               
 
 ){
-  this.logger = appLogService.withContext(PlacesService.name);
+  this.logger = this.appLogService.withContext(PlacesService.name);
   }
 
   async create(createPlaceDto: CreatePlaceDto,pathImages:string[],user:User) {
@@ -40,8 +42,9 @@ export class PlacesService {
        const [cityData,bookingData,categoryData] = await this.getInformationToCreatePlace(createPlaceDto.category_id,createPlaceDto.booking_mode_id,createPlaceDto.city_id);
        const placetoCreate = this.placeRepo.create({...createPlaceDto,city:cityData,booking_mode:bookingData,category:categoryData,owner:user});
        const placeCreated = await this.placeRepo.save(placetoCreate);
-       await this.enqueueImageService.enqueImagesToUpload(placeCreated.id,pathImages);
-       this.logger.log('places created successfully')
+       //await this.enqueueImageService.enqueImagesToUpload(placeCreated.id,pathImages);
+       this.locationService.create(placeCreated.id,createPlaceDto.latitude,createPlaceDto.longitude)
+       this.logger.log('places created successfully');
        return placeCreated;
     }catch(error){
       this.throwCommonError(error,"Error cretae Place Somehting was wrong");
