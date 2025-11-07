@@ -30,8 +30,8 @@ export class ImageUploadProcessor extends WorkerHost{
                     this.uploadImages(job);
                     break;
                 }
-                case 'delete-images-cloud':{
-                    this.deleteImages(job);
+                case 'update-images-cloud':{
+                    this.updateImages(job);
                     break;
                 }
             }
@@ -48,18 +48,23 @@ export class ImageUploadProcessor extends WorkerHost{
             this.logger.log("images uploaded and place updated successfully");
         }catch(error){
             this.logger.error("Error to store images - cloud",error.stack || 'error found trace on uploadImages Cloud')
-             throw new InternalServerErrorException("Error to store images");
         }
         
     }
 
 
-    private async deleteImages(job:Job){
-        const {place,images} = job.data;
-        console.log("DELETE METHOD-------------------------------------")
-        console.log(place);
-        console.log(images);
-        console.log("DELETE METHOD-------------------------------------")
+    private async updateImages(job:Job){
+        const {place,images,owner} = job.data;
+        try{
+            const imagesUploaded = await this.uploadImageServices.uploadImages(images);
+            await this.placeService.updateImagesPlace(place,imagesUploaded);
+            this.logger.log("images updated successfully");
+        }catch(error){
+            this.logger.error("Error uploading images to Update - cloud  deleteImages()",error.stack || 'error found trace on uploadImages Cloud')   
+        }finally{
+            this.imageLocal.removeImageDisk(images);
+            this.logger.log("local image deleted successfully")
+        }
     }
 
 

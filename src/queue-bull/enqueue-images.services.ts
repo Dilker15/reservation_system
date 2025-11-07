@@ -29,13 +29,11 @@ export class EnqueueImagesUploadServices{
 
 
 
-    async enqueImageToRemove(place_id:string,imagesRoutesToUpdate:string[]){
+    async enqueImageToUpdate(place_id:string,imagesRoutesToUpdate:string[],owner_id:string){
        try{
-           await this.queueImages.add(JobNameImages.DELETEIMAGES,{images:imagesRoutesToUpdate,place:place_id});
-           this.logger.log("Enque Image to remove succesfully placeId : "+place_id);
-
+           await this.queueImages.add(JobNameImages.UPDATEIMAGES,{images:imagesRoutesToUpdate,place:place_id,owner:owner_id});
+           this.logger.log("Enqueue Images to update succesfully placeId : "+place_id);
        }catch(error){
-          this.logger.error("Error enqueue image to update "+JSON.stringify(imagesRoutesToUpdate),error.stack);
           throw error;
        }
     }

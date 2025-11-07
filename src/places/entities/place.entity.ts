@@ -1,11 +1,11 @@
 import { BookingMode } from "src/booking-mode/entities/booking-mode.entity";
 import { City } from "src/countries/entities/city.entity";
 import { User } from "src/users/entities/user.entity";
-import { Column, CreateDateColumn, Entity, Index, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, Index, JoinColumn, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 import { PlaceImages } from "./place-images.entity";
 import { Category } from "src/categories/entities/category.entity";
-import { Availability, FieldLocation, placeEnumStatus } from "../interfaces/interfaces";
-import { Transform } from "class-transformer";
+import { placeEnumStatus } from "../interfaces/interfaces";
+import { Location } from "../../locations/entities/location.entity";
 
 @Entity({name:'places'})
 export class Place {
@@ -37,8 +37,8 @@ export class Place {
 
 
 
-    @Column({name:'location',type:'varchar'})
-    location:string;
+    @OneToOne(()=>Location,(location)=>location.place)
+    location:Location;
 
 
     @Column({ name: 'availability', type: 'varchar' })
@@ -68,6 +68,7 @@ export class Place {
 
     @OneToMany(()=>PlaceImages,(placeImage)=>placeImage.place)
     images:PlaceImages[];
+
 
 
     @Column({name:'status',enum:placeEnumStatus,default:placeEnumStatus.PROCESSING})

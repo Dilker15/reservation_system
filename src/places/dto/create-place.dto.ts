@@ -21,7 +21,11 @@ export class CreatePlaceDto {
 
 
   @IsString()
-  location: string;
+  latitude:number;
+
+
+  @IsString()
+  longitude:number;
 
  
  

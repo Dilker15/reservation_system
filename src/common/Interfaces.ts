@@ -40,5 +40,5 @@ export enum BookingName {
 
 export enum JobNameImages {
   UPLOADIMAGES = "upload-images-cloud",
-  DELETEIMAGES = "delete-images-cloud"
+  UPDATEIMAGES = "update-images-cloud"
 }
