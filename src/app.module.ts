@@ -13,6 +13,7 @@ import { CountriesModule } from './countries/countries.module';
 import { BookingModeModule } from './booking-mode/booking-mode.module';
 import { CategoriesModule } from './categories/categories.module';
 import { ImageUploadModule } from './image-upload/image-upload.module';
+import { LocationsModule } from './locations/locations.module';
 
 
 @Module({
@@ -55,6 +56,7 @@ import { ImageUploadModule } from './image-upload/image-upload.module';
     BookingModeModule,
     CategoriesModule,
     ImageUploadModule,
+    LocationsModule,
 
   ],
   controllers: [AppController],
