@@ -1,7 +1,9 @@
 import { Injectable, NotImplementedException } from "@nestjs/common";
+import { Console } from "console";
 import { promises as fs } from 'fs';
 import { join } from 'path';
-import { v4 as uuidv4 } from 'uuid';
+const { v4: uuidv4 } = require('uuid');
+
 
 @Injectable()
 export class ImageLocalService{
@@ -27,6 +29,7 @@ export class ImageLocalService{
 
 
     async removeImageDisk(imagesLocalPath: string[]): Promise<void> {
+    console.log("REMOTE METHOD : ",imagesLocalPath);
     const deleteTasks = imagesLocalPath.map(async (imgPath) => {
       try {
         await fs.unlink(this.pathImages+'/'+imgPath);
