@@ -18,6 +18,9 @@ import { plainToInstance } from 'class-transformer';
 import { UpdatePlaceDto } from './dto/update-place.dto';
 import { ImageLocalService } from 'src/common/helpers/imageLocalService';
 import { LocationsService } from 'src/locations/locations.service';
+import { ImageUploadService } from 'src/image-upload/image-upload.service';
+import { UpdateLocationDto } from 'src/locations/dto/update.location.dto';
+
 
 @Injectable()
 export class PlacesService {
@@ -31,25 +34,41 @@ export class PlacesService {
               private readonly dataSource:DataSource,
               private readonly appLogService:AppLoggerService,
               private readonly locationService:LocationsService,
-              
-
+              private readonly imageUploadService:ImageUploadService,
 ){
   this.logger = this.appLogService.withContext(PlacesService.name);
   }
 
+
+
+
   async create(createPlaceDto: CreatePlaceDto,pathImages:string[],user:User) {
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+    
     try{
+       const placeRepo = queryRunner.manager.getRepository(Place);
        const [cityData,bookingData,categoryData] = await this.getInformationToCreatePlace(createPlaceDto.category_id,createPlaceDto.booking_mode_id,createPlaceDto.city_id);
-       const placetoCreate = this.placeRepo.create({...createPlaceDto,city:cityData,booking_mode:bookingData,category:categoryData,owner:user});
-       const placeCreated = await this.placeRepo.save(placetoCreate);
-       //await this.enqueueImageService.enqueImagesToUpload(placeCreated.id,pathImages);
-       this.locationService.create(placeCreated.id,createPlaceDto.latitude,createPlaceDto.longitude)
+       const placetoCreate = placeRepo.create({...createPlaceDto,city:cityData,booking_mode:bookingData,category:categoryData,owner:user});
+       const placeCreated = await placeRepo.save(placetoCreate);
+       await this.enqueueImageService.enqueImagesToUpload(placeCreated.id,pathImages);
+       await this.locationService.create(placeCreated,createPlaceDto.latitude,createPlaceDto.longitude,queryRunner.manager);
        this.logger.log('places created successfully');
+       await queryRunner.commitTransaction();
        return placeCreated;
     }catch(error){
-      this.throwCommonError(error,"Error cretae Place Somehting was wrong");
+       await queryRunner.rollbackTransaction();
+       this.throwCommonError(error,"Error cretae Place Somehting was wrong");
+    }finally{
+      await queryRunner.release();
     }
   }
+
+
+
+
+
 
   async findAll(queryParams:PaginationDto) {
     const {limit=10,page=1} = queryParams;
@@ -83,7 +102,7 @@ export class PlacesService {
     try{
         const placeFound = await this.placeRepo.findOne({
             where:{id:placeId,status:placeEnumStatus.ACTIVE,...queryUser},
-            relations:['images','category','booking_mode','city','city.country'],
+            relations:['images','category','booking_mode','location','city','city.country'],
         });
       if(!placeFound){
           throw new BadRequestException(`Place with ${placeId} : not Found`);
@@ -109,9 +128,6 @@ export class PlacesService {
             ...updatePlaceDto,
             updated_at:new Date(),
      });
-     console.log(updatePlaceDto);
-     console.log(placeFound);
-      
       return placeFound;
     }catch(error:unknown){
       this.throwCommonError(error,"Error on updateBasic Information place");
@@ -157,16 +173,86 @@ export class PlacesService {
      if(!bookingFound){
        throw new BadRequestException("Booking Mode to update not found");
      }
-    const placeFound = await this.findOne(place_id,owner); // IT VERIFY IF EXIST PLACE TOO.
-    console.log(placeFound);
+    const placeFound = await this.findOne(place_id,owner); // IT VERIFY IF PLACE EXISTS AND RETURN IT;
     await this.placeRepo.update(place_id,{booking_mode:bookingFound});
     return placeFound;
   }  
 
 
-  async deleteImages(place_id:string,image_id:string,owner:User){
-     console.log("DELETED IMAGES");
-  }
+    async updateLocation(place_id:string,newLocation:UpdateLocationDto,owner:User){
+      try{
+          await this.findOne(place_id,owner);
+          const locatinUpdated = await this.locationService.updateByPlace(place_id,newLocation);
+          return locatinUpdated;
+      }catch(error){
+          this.throwCommonError(error,'Error Update location');
+      }
+    }
+
+
+    async updateCity(place_id: string, newCityId: string, owner: User) {
+      try {
+        const [place, newCity] = await Promise.all([
+          this.placeRepo.findOneOrFail({
+            where: { id: place_id, owner: { id: owner.id }, status: placeEnumStatus.ACTIVE },
+            relations: ['city'],
+          }),
+          this.cityRepo.findOneByOrFail({ id: newCityId, is_active: true }),
+        ]);
+    
+        place.city = newCity;
+        place.updated_at = new Date();
+    
+        const updatedPlace = await this.placeRepo.save(place);
+        this.logger.log(`City updated successfully for place_id: ${place_id}`);
+        return this.createPlaceResponseDto(updatedPlace);
+    
+      } catch (error) {
+        this.throwCommonError(error, 'City or place Not Found');
+      }
+    }
+    
+
+
+
+    async deleteImage(place_id: string, image_id: string, owner: User) {
+      let imageFound;
+
+      const queryRunner = this.dataSource.createQueryRunner();
+      await queryRunner.connect();
+      await queryRunner.startTransaction();
+    
+      try {
+        const repo = queryRunner.manager.getRepository(PlaceImages);
+        await this.findOne(place_id, owner);
+    
+        imageFound = await repo.findOne({
+          where: { storage_id: image_id, place: { id: place_id } },
+        });
+    
+        if (!imageFound) {
+          throw new BadRequestException(`Image with ID ${image_id} not found in place ${place_id}`);
+        }
+    
+        await repo.remove(imageFound);
+        await queryRunner.commitTransaction();
+        this.logger.log("Image deleted from DB successfully");
+      } catch (error) {
+        await queryRunner.rollbackTransaction();
+        this.logger.error(error?.message, error?.stack || "trace not found on deleteImage");
+        this.throwCommonError(error, "Error on deleteImages()");
+      } finally {
+        await queryRunner.release();
+      }
+      try {
+        await this.imageUploadService.deleteImage(image_id);
+        this.logger.log("Image deleted from cloud successfully");
+      } catch (err) {
+        this.logger.warn(`Failed to delete image ${image_id} from cloud storage: ${err.message}`);
+      }
+      return imageFound;
+    }
+  
 
 
   private async getInformationToCreatePlace(category_id: string,booking_id: string,city_id: string):Promise<[City, BookingMode, Category]> {
@@ -291,14 +377,14 @@ export class PlacesService {
 
 
   private throwCommonError(error:any,messageError:string){
+    this.logger.error(messageError,error.stack || 'trace not found on updatePlace');
      if (error instanceof BadRequestException) {
        this.logger.warn(messageError);
         throw error;
       }
      if (error instanceof Error) {
-      throw new BadRequestException(error.message);
+      throw new InternalServerErrorException(error.message);
      }
-     this.logger.error(messageError,error.stack || 'trace not found on updatePlace');
      throw new BadRequestException('Unexpected error occurred');
   }
 

@@ -37,7 +37,7 @@ export class Place {
 
 
 
-    @OneToOne(()=>Location,(location)=>location.place)
+    @OneToOne(()=>Location,(location)=>location.place,{eager:true})
     location:Location;
 
 

@@ -37,6 +37,7 @@ export class ImageUploadService implements IImageUpload{
   async deleteImage(publicId: string): Promise<void> {
     try{
        const imageDeleted = await this.cloudinary.uploader.destroy(publicId);
+       this.logger.log(`Image remove from cloud successfull ${publicId} - ${imageDeleted}`);
     }catch(error){
       this.logger.error("error cloudImages on updateImagePlace()",error.stack);
       throw error;
