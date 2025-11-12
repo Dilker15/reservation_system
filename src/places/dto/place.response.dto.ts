@@ -8,6 +8,8 @@ import { Expose, Type } from 'class-transformer';
 import { CategoryResponseDto } from 'src/categories/dto/category-response.dto';
 import { BookingModeResponseDto } from 'src/booking-mode/dto/booking-mode-response.dto';
 import { CityResponseDto } from 'src/countries/dto/country-response';
+import { Location } from 'src/locations/entities/location.entity';
+import { LocationResponseDto } from 'src/locations/dto/location.response.dto';
 
 export class PlaceResponseDto {
   
@@ -28,7 +30,8 @@ export class PlaceResponseDto {
   price: number;
 
   @Expose()
-  location: string;
+  @Type(()=>LocationResponseDto)
+  location:LocationResponseDto;
 
   @Expose()
   availability: string;

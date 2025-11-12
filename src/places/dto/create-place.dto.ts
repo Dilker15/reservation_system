@@ -20,11 +20,13 @@ export class CreatePlaceDto {
   address: string;
 
 
-  @IsString()
+  @Type(()=>Number)
+  @IsNumber()
   latitude:number;
 
 
-  @IsString()
+  @Type(()=>Number)
+  @IsNumber()
   longitude:number;
 
  

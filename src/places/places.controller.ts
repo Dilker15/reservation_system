@@ -11,6 +11,7 @@ import { User } from 'src/users/entities/user.entity';
 import { PaginationDto } from 'src/common/dtos/pagination.dto';
 import { Public } from 'src/auth/decorators/public.decorator';
 import { PlaceResponseDto } from './dto/place.response.dto';
+import { UpdateLocationDto } from 'src/locations/dto/update.location.dto';
 
 
 
@@ -20,27 +21,27 @@ export class PlacesController {
 
   @UseInterceptors(ImageUploadInterceptor('images'))
   @Role(Roles.OWNER)
-  @Post()
+  @Post()//
   async create(@Body() createPlaceDto: CreatePlaceDto,@UploadedFiles() images:Express.Multer.File[],@GetUser() currentUser:User) {
     const routeImages = await this.imageLocalService.saveImagesToDisk(images);
     return this.placesService.create(createPlaceDto,routeImages,currentUser);
   }
 
   @Public()
-  @Get()
+  @Get() //
   findAll(@Query() paginationDto:PaginationDto) {
     return this.placesService.findAll(paginationDto);
   }
 
 
   @Public()
-  @Get(':id')
+  @Get(':id') //
   async findOne(@Param('id',ParseUUIDPipe) placeId:string):Promise<PlaceResponseDto>{
      return this.placesService.findOne(placeId);
   }
 
   @Role(Roles.OWNER)
-  @Get('/me')
+  @Get('/me') //
   async getPlacesOwner(@GetUser() owner:User){
       return this.placesService.getMyPlaces(owner);
   }
@@ -48,7 +49,7 @@ export class PlacesController {
 
 
   @Role(Roles.OWNER)
-  @Patch(":place_id")
+  @Patch(":place_id") //
   updatePlace(@Body() updateDto:UpdatePlaceDto,@Param('place_id',ParseUUIDPipe) place_id:string,@GetUser() owner:User){
     return this.placesService.updateBasicInformation(updateDto,place_id,owner);
   }
@@ -59,7 +60,7 @@ export class PlacesController {
 
   @UseInterceptors(ImageUploadInterceptor('imagesToUpdate'))
   @Role(Roles.OWNER)
-  @Patch(':place_id/images')
+  @Patch(':place_id/images') //
   async updatePlacesImages(@Param('place_id',ParseUUIDPipe) place_id:string,@GetUser() owner:User,@UploadedFiles() imagesToUpdate:Express.Multer.File[]){
     const imagesRoutes = await this.imageLocalService.saveImagesToDisk(imagesToUpdate); 
     return this.placesService.updateImages(place_id,owner,imagesRoutes);
@@ -68,7 +69,7 @@ export class PlacesController {
 
 
   @Role(Roles.OWNER)
-  @Patch(':place_id/category')
+  @Patch(':place_id/category') //
   updatePlaceCategory(@Param('place_id',ParseUUIDPipe) place_id:string,@Body('category_id',ParseUUIDPipe) category_id:string,@GetUser() owner:User){
     return this.placesService.updateCategory(place_id,category_id,owner);
   }
@@ -77,7 +78,7 @@ export class PlacesController {
 
 
   @Role(Roles.OWNER)
-  @Patch(":place_id/booking_mode/")
+  @Patch(":place_id/booking_mode/") //
   updatePlaceBookingMode(@Param('place_id',ParseUUIDPipe) place_id:string,@Body('booking_mode_id',ParseUUIDPipe) booking_mode_id:string,@GetUser() owner:User){
     return this.placesService.updateBookingMode(place_id,booking_mode_id,owner)
   }
@@ -86,17 +87,25 @@ export class PlacesController {
   
 
   @Role(Roles.OWNER)
-  @Delete(":place_id/images")
-  deleteImageFromPlace(@Param('place_id',ParseUUIDPipe) place_id:string,@Body('image_id') image_id:string,@GetUser() owner:User){
-    return this.placesService.deleteImages(place_id,image_id,owner);
+  @Delete(":place_id/images/:image_id") //
+  deleteImageFromPlace(@Param('place_id',ParseUUIDPipe) place_id:string,@Param('image_id') image_id:string,@GetUser() owner:User){
+    return this.placesService.deleteImage(place_id,image_id,owner);
+  }
+
+
+  @Role(Roles.OWNER)
+  @Patch(":place_id/location/")//
+  updateLocation(@Param('place_id',ParseUUIDPipe) place_id:string,@Body() newLocation:UpdateLocationDto,@GetUser() owner:User){
+     return this.placesService.updateLocation(place_id,newLocation,owner);
   }
 
 
 
 
   @Role(Roles.OWNER)
-  @Patch(":place_id/location/")
-  updatePlaceLocation(@Body('city_id',ParseUUIDPipe) city_id:string,@GetUser() owner:User){
+  @Patch(":place_id/city/")//
+  updateCity(@Param('place_id',ParseUUIDPipe) place_id:string,@Body('city_id',ParseUUIDPipe) city_id:string,@GetUser() owner:User){
+    return this.placesService.updateCity(place_id,city_id,owner);
   }
 
 

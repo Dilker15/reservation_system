@@ -58,11 +58,12 @@ export class ImageUploadProcessor extends WorkerHost{
         try{
             const imagesUploaded = await this.uploadImageServices.uploadImages(images);
             await this.placeService.updateImagesPlace(place,imagesUploaded);
+            
             this.logger.log("images updated successfully");
         }catch(error){
             this.logger.error("Error uploading images to Update - cloud  deleteImages()",error.stack || 'error found trace on uploadImages Cloud')   
         }finally{
-            this.imageLocal.removeImageDisk(images);
+            await this.imageLocal.removeImageDisk(images);
             this.logger.log("local image deleted successfully")
         }
     }
