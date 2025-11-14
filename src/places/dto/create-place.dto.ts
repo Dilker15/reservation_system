@@ -2,9 +2,12 @@ import {
   IsString, 
   IsNumber, 
   IsUUID, 
-  ValidateNested 
+  ValidateNested, 
+  IsArray,
+  ArrayUnique
 } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
+import { AvailabilityDto } from './availability.dto';
 
 export class CreatePlaceDto {
  
@@ -30,10 +33,15 @@ export class CreatePlaceDto {
   longitude:number;
 
  
- 
-  @IsString()
-  availability: string;
 
+  
+  @IsArray()
+  @ArrayUnique((o: AvailabilityDto) => o.day)
+  @ValidateNested({ each: true })
+  @Type(() => AvailabilityDto)
+  opening_hours: AvailabilityDto[];
+
+  
   
   @Type(() => Number)
   @IsNumber()

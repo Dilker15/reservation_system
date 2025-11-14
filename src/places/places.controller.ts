@@ -12,6 +12,8 @@ import { PaginationDto } from 'src/common/dtos/pagination.dto';
 import { Public } from 'src/auth/decorators/public.decorator';
 import { PlaceResponseDto } from './dto/place.response.dto';
 import { UpdateLocationDto } from 'src/locations/dto/update.location.dto';
+import { AvailabilityDto } from './dto/availability.dto';
+import { ParseAndValidateJsonPipe } from 'src/common/pipes/ParseJson.pipe';
 
 
 
@@ -22,9 +24,14 @@ export class PlacesController {
   @UseInterceptors(ImageUploadInterceptor('images'))
   @Role(Roles.OWNER)
   @Post()//
-  async create(@Body() createPlaceDto: CreatePlaceDto,@UploadedFiles() images:Express.Multer.File[],@GetUser() currentUser:User) {
+  async create(@Body('opening_hours',ParseAndValidateJsonPipe) opening_hours:AvailabilityDto[],
+                @Body() createPlaceDto: Partial<CreatePlaceDto>,
+                @UploadedFiles() images:Express.Multer.File[],
+                @GetUser() currentUser:User) {
+
     const routeImages = await this.imageLocalService.saveImagesToDisk(images);
-    return this.placesService.create(createPlaceDto,routeImages,currentUser);
+    createPlaceDto.opening_hours = opening_hours;
+    return this.placesService.create(createPlaceDto as CreatePlaceDto,routeImages,currentUser);
   }
 
   @Public()

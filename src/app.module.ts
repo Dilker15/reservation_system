@@ -14,6 +14,7 @@ import { BookingModeModule } from './booking-mode/booking-mode.module';
 import { CategoriesModule } from './categories/categories.module';
 import { ImageUploadModule } from './image-upload/image-upload.module';
 import { LocationsModule } from './locations/locations.module';
+import { OpeningHoursModule } from './opening-hours/opening-hours.module';
 
 
 @Module({
@@ -57,6 +58,7 @@ import { LocationsModule } from './locations/locations.module';
     CategoriesModule,
     ImageUploadModule,
     LocationsModule,
+    OpeningHoursModule,
 
   ],
   controllers: [AppController],
