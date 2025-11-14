@@ -1,86 +1,20 @@
+import { IsInt, IsString, Matches, Max, Min } from 'class-validator';
 
-import { 
-  IsArray, 
-  ValidateNested, 
-  IsOptional, 
-  ArrayMinSize, 
-  IsString,
-  Matches
-} from 'class-validator';
-import { Type } from 'class-transformer';
-
-
-
-export class TimeSlotDto {
-
-  @IsString()
-  @Matches(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, {
-    message: 'Format should be : HH:mm (ej: 09:00)',
-  })
-  from: string;
-
-  @IsString()
-  @Matches(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, {
-    message: 'Format should be :  HH:mm (ej: 17:00)',
-  })
-  to: string;
-
-}
 export class AvailabilityDto {
+  @IsInt()
+  @Min(1)
+  @Max(7)
+  day: number;
 
+  @IsString()
+  @Matches(/^([01]\d|2[0-3]):([0-5]\d)$/, {
+    message: 'open_time must be in format HH:mm (00:00 - 23:59)',
+  })
+  open_time: string;
 
-  @IsOptional()
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => TimeSlotDto)
-  @ArrayMinSize(1)
-  monday?: TimeSlotDto[];
-
-  @IsOptional()
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => TimeSlotDto)
-  @ArrayMinSize(1)
-  tuesday?: TimeSlotDto[];
-
-
-  @IsOptional()
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => TimeSlotDto)
-  @ArrayMinSize(1)
-  wednesday?: TimeSlotDto[];
-
-  
-  @IsOptional()
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => TimeSlotDto)
-  @ArrayMinSize(1)
-  thursday?: TimeSlotDto[];
-
-
-  @IsOptional()
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => TimeSlotDto)
-  @ArrayMinSize(1)
-  friday?: TimeSlotDto[];
-
-
-  @IsOptional()
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => TimeSlotDto)
-  @ArrayMinSize(1)
-  saturday?: TimeSlotDto[];
-
- 
-  @IsOptional()
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => TimeSlotDto)
-  @ArrayMinSize(1)
-  sunday?: TimeSlotDto[];
+  @IsString()
+  @Matches(/^([01]\d|2[0-3]):([0-5]\d)$/, {
+    message: 'close_time must be in format HH:mm (00:00 - 23:59)',
+  })
+  close_time: string;
 }
-

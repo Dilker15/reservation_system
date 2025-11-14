@@ -1,5 +1,5 @@
 import { InjectQueue } from "@nestjs/bullmq";
-import { Injectable, InternalServerErrorException } from "@nestjs/common";
+import { BadRequestException, Injectable, InternalServerErrorException } from "@nestjs/common";
 import { Queue } from "bullmq";
 import { EMAIL_TYPE, JobNameImages} from "src/common/Interfaces";
 import { AppLoggerService } from "src/logger/logger.service";

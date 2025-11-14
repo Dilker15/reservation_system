@@ -6,6 +6,7 @@ import { PlaceImages } from "./place-images.entity";
 import { Category } from "src/categories/entities/category.entity";
 import { placeEnumStatus } from "../interfaces/interfaces";
 import { Location } from "../../locations/entities/location.entity";
+import { OpeningHour } from "src/opening-hours/entities/opening-hour.entity";
 
 @Entity({name:'places'})
 export class Place {
@@ -23,26 +24,20 @@ export class Place {
     description:string;
 
 
-
     @Column({name:'address',type:'varchar'})
     address:string;
-
-
-   
 
 
     @Column({name:'price',type:'float'})
     price:number;
 
 
-
-
-    @OneToOne(()=>Location,(location)=>location.place,{eager:true})
+    @OneToOne(()=>Location,(location)=>location.place,{eager:true,cascade:true})
     location:Location;
 
 
-    @Column({ name: 'availability', type: 'varchar' })
-    availability:string;
+    @OneToMany(()=>OpeningHour,(op)=>op.place,{cascade:true})
+    opening_hours:OpeningHour[];
 
 
     @ManyToOne(()=>City,(city)=>city.places)
