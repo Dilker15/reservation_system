@@ -20,6 +20,7 @@ import { ImageLocalService } from 'src/common/helpers/imageLocalService';
 import { LocationsService } from 'src/locations/locations.service';
 import { ImageUploadService } from 'src/image-upload/image-upload.service';
 import { UpdateLocationDto } from 'src/locations/dto/update.location.dto';
+import { OpeningHour } from 'src/opening-hours/entities/opening-hour.entity';
 
 
 @Injectable()
@@ -49,11 +50,21 @@ export class PlacesService {
     
     try{
        const placeRepo = queryRunner.manager.getRepository(Place);
-       const [cityData,bookingData,categoryData] = await this.getInformationToCreatePlace(createPlaceDto.category_id,createPlaceDto.booking_mode_id,createPlaceDto.city_id);
-       const placetoCreate = placeRepo.create({...createPlaceDto,city:cityData,booking_mode:bookingData,category:categoryData,owner:user});
+       const [cityData,bookingData,categoryData] = await this.getInformationToCreatePlace(createPlaceDto.category_id,createPlaceDto.booking_mode_id,createPlaceDto.city_id,);
+       const placetoCreate = placeRepo.create({...createPlaceDto,city:cityData,booking_mode:bookingData,category:categoryData,owner:user,
+                                                   location:{
+                                                    latitude:createPlaceDto.latitude,
+                                                    longitude:createPlaceDto.longitude,
+                                                   },
+                                                  opening_hours: createPlaceDto.opening_hours.map(h => ({
+                                                                  ...new OpeningHour(),
+                                                                  day: h.day,
+                                                                  open_time: h.open_time,
+                                                                  close_time: h.close_time,
+                                                                }))
+                                                              });
        const placeCreated = await placeRepo.save(placetoCreate);
        await this.enqueueImageService.enqueImagesToUpload(placeCreated.id,pathImages);
-       await this.locationService.create(placeCreated,createPlaceDto.latitude,createPlaceDto.longitude,queryRunner.manager);
        this.logger.log('places created successfully');
        await queryRunner.commitTransaction();
        return placeCreated;
@@ -79,6 +90,7 @@ export class PlacesService {
       const [data,total]= await querySql.getManyAndCount();
       return {total,page,limit,data}
     }catch(error){
+      this.logger.error(error.message,error.stack);
       throw new InternalServerErrorException("Something was wrong get places");
     }
   }
@@ -112,6 +124,7 @@ export class PlacesService {
        if(error instanceof BadRequestException){
           throw error;
        }
+       this.logger.error(error,error.stack);
        throw new InternalServerErrorException("Something was wrong");
     }
   }
@@ -120,14 +133,10 @@ export class PlacesService {
   async updateBasicInformation(updatePlaceDto:UpdatePlaceDto,place_id:string,ownerPlace:User){
     try{
        const placeFound = await this.findOne(place_id,ownerPlace)
-       if(!placeFound){
-          this.logger.warn("place not found or inactive with id : "+place_id);
-          throw new BadRequestException("Place Not Found");
-       }
-     await this.placeRepo.update(place_id, {
-            ...updatePlaceDto,
-            updated_at:new Date(),
-     });
+        await this.placeRepo.update(place_id, {
+                ...updatePlaceDto,
+                updated_at:new Date(),
+        });
       return placeFound;
     }catch(error:unknown){
       this.throwCommonError(error,"Error on updateBasic Information place");
@@ -139,9 +148,6 @@ export class PlacesService {
   async updateImages(place_id:string,owner:User,filesToUpdate:string[]){
       try{
          const placeToUpdate  = await this.findOne(place_id,owner);
-         if(!placeToUpdate){
-           throw new BadRequestException("Place not Found or owner Incorrect");
-         }
          const count = placeToUpdate.images.length
          if(count + filesToUpdate.length> 5){
             throw new BadRequestException("Max number of total files accepted 5,remove files");
