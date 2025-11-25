@@ -14,6 +14,7 @@ import { PlaceResponseDto } from './dto/place.response.dto';
 import { UpdateLocationDto } from 'src/locations/dto/update.location.dto';
 import { AvailabilityDto } from './dto/availability.dto';
 import { ParseAndValidateJsonPipe } from 'src/common/pipes/ParseJson.pipe';
+import { CalendarAvailabityDto } from 'src/common/dtos/calendarAvailabity';
 
 
 
@@ -115,6 +116,12 @@ export class PlacesController {
     return this.placesService.updateCity(place_id,city_id,owner);
   }
 
+
+
+  @Get(':id/schedules')
+  getShedule(@Param('id',ParseUUIDPipe) place_id:string,@Body() calendarDto:CalendarAvailabityDto){
+     return  this.placesService.getCalendar(place_id,calendarDto);
+  }
 
 
 

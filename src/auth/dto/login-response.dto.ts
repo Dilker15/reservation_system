@@ -22,6 +22,4 @@ export class LoginResponseDto {
   @IsBoolean()
   is_active: boolean;
 
-  @IsString()
-  token: string;
 }
