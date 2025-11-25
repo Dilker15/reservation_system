@@ -15,6 +15,7 @@ import { CategoriesModule } from './categories/categories.module';
 import { ImageUploadModule } from './image-upload/image-upload.module';
 import { LocationsModule } from './locations/locations.module';
 import { OpeningHoursModule } from './opening-hours/opening-hours.module';
+import { ReservationModule } from './reservation/reservation.module';
 
 
 @Module({
@@ -59,6 +60,7 @@ import { OpeningHoursModule } from './opening-hours/opening-hours.module';
     ImageUploadModule,
     LocationsModule,
     OpeningHoursModule,
+    ReservationModule,
 
   ],
   controllers: [AppController],

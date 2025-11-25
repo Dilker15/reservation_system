@@ -47,7 +47,7 @@ export class AuthService {
   }
   
 
-  async login(loginDto:LoginDto):Promise<LoginResponseDto>{
+  async login(loginDto:LoginDto){
      const userFound = await this.userServices.findUserQuery(loginDto.email,{email_verified:true,is_active:true});
      const comparedPassword =  await this.bcryptService.verifyPassword(loginDto.password,userFound.password);
      if(!comparedPassword){

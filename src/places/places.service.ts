@@ -21,6 +21,7 @@ import { LocationsService } from 'src/locations/locations.service';
 import { ImageUploadService } from 'src/image-upload/image-upload.service';
 import { UpdateLocationDto } from 'src/locations/dto/update.location.dto';
 import { OpeningHour } from 'src/opening-hours/entities/opening-hour.entity';
+import { CalendarAvailabityDto } from 'src/common/dtos/calendarAvailabity';
 
 
 @Injectable()
@@ -114,7 +115,7 @@ export class PlacesService {
     try{
         const placeFound = await this.placeRepo.findOne({
             where:{id:placeId,status:placeEnumStatus.ACTIVE,...queryUser},
-            relations:['images','category','booking_mode','location','city','city.country'],
+            relations:['images','category','booking_mode','location','city','city.country','opening_hours'],
         });
       if(!placeFound){
           throw new BadRequestException(`Place with ${placeId} : not Found`);
@@ -346,6 +347,26 @@ export class PlacesService {
 
 
 
+  async getCalendar(place_id:string,calendarDto:CalendarAvailabityDto){
+    let { start_date, end_date } = calendarDto;
+    const start = start_date ? new Date(start_date) : new Date();
+    let end: Date;
+
+    if (end_date) {
+      end = new Date(end_date);
+    } else {
+      end = new Date(start);
+      end.setDate(start.getDate() + 7); 
+    }
+
+    console.log("Start:", start);
+    console.log("End:", end);
+
+  }
+
+
+
+
   private buildQueryFilterPlaces(queryParams:PaginationDto,owner?:string){
       const querySql = this.placeRepo.createQueryBuilder('place')
       .innerJoin("place.category",'cat')
@@ -372,6 +393,7 @@ export class PlacesService {
       querySql.andWhere('place.status = :myStatus',{myStatus:'active'});
     return querySql;
   }
+
 
 
 
