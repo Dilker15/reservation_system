@@ -10,6 +10,8 @@ import { BookingModeResponseDto } from 'src/booking-mode/dto/booking-mode-respon
 import { CityResponseDto } from 'src/countries/dto/country-response';
 import { Location } from 'src/locations/entities/location.entity';
 import { LocationResponseDto } from 'src/locations/dto/location.response.dto';
+import { OpeningHour } from 'src/opening-hours/entities/opening-hour.entity';
+import { OpeningHoursResponseDto } from 'src/opening-hours/dto/opening.reponse.dto';
 
 export class PlaceResponseDto {
   
@@ -34,7 +36,8 @@ export class PlaceResponseDto {
   location:LocationResponseDto;
 
   @Expose()
-  availability: string;
+  @Type(()=>OpeningHoursResponseDto)
+  opening_hours:OpeningHoursResponseDto;
 
   @Expose()
   @Type(() => ImageResponseDto)  

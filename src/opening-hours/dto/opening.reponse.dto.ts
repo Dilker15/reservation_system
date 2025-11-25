@@ -11,5 +11,13 @@ export class OpeningHoursResponseDto{
     @Expose()
     day:number;
 
+
+    @Expose()
+    open_time:string;
+
+
+    @Expose()
+    close_time:string;
+
     
 }

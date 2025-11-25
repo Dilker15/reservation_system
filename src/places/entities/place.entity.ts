@@ -7,6 +7,7 @@ import { Category } from "src/categories/entities/category.entity";
 import { placeEnumStatus } from "../interfaces/interfaces";
 import { Location } from "../../locations/entities/location.entity";
 import { OpeningHour } from "src/opening-hours/entities/opening-hour.entity";
+import { Reservation } from "src/reservation/entities/reservation.entity";
 
 @Entity({name:'places'})
 export class Place {
@@ -64,6 +65,9 @@ export class Place {
     @OneToMany(()=>PlaceImages,(placeImage)=>placeImage.place)
     images:PlaceImages[];
 
+
+    @OneToMany(()=>Reservation,(res)=>res.place)
+    reservations:Reservation[];
 
 
     @Column({name:'status',enum:placeEnumStatus,default:placeEnumStatus.PROCESSING})

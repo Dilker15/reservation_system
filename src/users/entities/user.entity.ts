@@ -1,5 +1,6 @@
 import { Roles } from "src/common/Interfaces";
 import { Place } from "src/places/entities/place.entity";
+import { Reservation } from "src/reservation/entities/reservation.entity";
 import { Column, CreateDateColumn, Entity, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 
 @Entity({name:'users'})
@@ -28,6 +29,10 @@ export class User {
 
     @Column({ type: 'enum', enum: Roles, default: Roles.CLIENT})
     role:Roles;
+
+
+    @OneToMany(()=>Reservation,(res)=>res.user)
+    reservations:Reservation[];
 
     
     @Column({name:'is_active', type:'boolean' , default:false})

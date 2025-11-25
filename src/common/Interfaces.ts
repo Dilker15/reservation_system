@@ -42,3 +42,13 @@ export enum JobNameImages {
   UPLOADIMAGES = "upload-images-cloud",
   UPDATEIMAGES = "update-images-cloud"
 }
+
+
+export enum RESERVATION_STATUS {
+  CREATED = "CREATED",              // Reserva creada sin pagar
+  PAID = "PAID",                    // Pagado y confirmado
+  CANCELLED = "CANCELLED",          // Cancelado
+  EXPIRED = "EXPIRED",              // No pagó a tiempo
+  IN_PROGRESS = "IN_PROGRESS",      // El usuario está utilizando el servicio
+  COMPLETED = "COMPLETED",          // Finalizada correctamente
+}
