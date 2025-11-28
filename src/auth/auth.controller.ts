@@ -3,10 +3,7 @@ import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register-auth-dto';
 import { LoginDto } from './dto/login.dto';
 import { VerifyEmailDto } from './dto/verify-email.dto';
-import { User } from 'src/users/entities/user.entity';
-import { GetUser } from './decorators/getUser.decorator';
 import { Public } from './decorators/public.decorator';
-import { Role } from './decorators/role.decorator';
 import { Roles } from 'src/common/Interfaces';
 
 
@@ -31,10 +28,10 @@ export class AuthController {
   }
 
 
-  @Role(Roles.OWNER,Roles.CLIENT)
+  @Public()
   @Post('/verify-email')
   verifyEmail(@Body() verifyDto:VerifyEmailDto){
-   throw new NotImplementedException('verify-email endpoint is not implemented yet');
+    return this.authService.verifyEmail(verifyDto);
   }
 
 
