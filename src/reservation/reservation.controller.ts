@@ -2,36 +2,23 @@ import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/commo
 import { ReservationService } from './reservation.service';
 import { CreateReservationDto } from './dto/create-reservation.dto';
 import { UpdateReservationDto } from './dto/update-reservation.dto';
-import { Public } from 'src/auth/decorators/public.decorator';
+import { User } from 'src/users/entities/user.entity';
+import { GetClient } from 'src/auth/decorators/getClient';
+import { GetUser } from 'src/auth/decorators/getUser.decorator';
+import { Role } from 'src/auth/decorators/role.decorator';
+import { Roles } from 'src/common/Interfaces';
 
 @Controller('reservation')
 export class ReservationController {
   constructor(private readonly reservationService: ReservationService) {}
 
 
-  @Public()
+
+  @Role(Roles.CLIENT)
   @Post()
-  create(@Body() createReservationDto: CreateReservationDto) {
-    return this.reservationService.create(createReservationDto);
+  create(@Body() createReservationDto: CreateReservationDto,@GetUser() client:User) {
+    return this.reservationService.create(createReservationDto,client);
   }
 
-  @Get()
-  findAll() {
-    return this.reservationService.findAll();
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.reservationService.findOne(+id);
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateReservationDto: UpdateReservationDto) {
-    return this.reservationService.update(+id, updateReservationDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.reservationService.remove(+id);
-  }
+ 
 }

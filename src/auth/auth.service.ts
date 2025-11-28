@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, LoggerService } from '@nestjs/common';
+import { BadRequestException, Injectable, LoggerService, NotFoundException } from '@nestjs/common';
 import { ClientRegisterStrategy } from './strategies/client-register.strategy';
 import { AdminRegisterStrategy } from './strategies/admin-register.strategy';
 import { RegisterDto } from './dto/register-auth-dto';
@@ -17,6 +17,7 @@ import { EnqueueMailServices } from 'src/queue-bull/enqueue-mail-services';
 import { ConfigService } from '@nestjs/config';
 import { AppLoggerService } from 'src/logger/logger.service';
 import { error } from 'console';
+import { VerifyEmailDto } from './dto/verify-email.dto';
 
 @Injectable()
 export class AuthService {
@@ -59,6 +60,10 @@ export class AuthService {
      return {...this.loginResponse(userFound),token}
   }
 
+
+  async verifyEmail(verifyDto:VerifyEmailDto){
+      return this.userServices.activateUser(verifyDto);
+  }
 
   
 
