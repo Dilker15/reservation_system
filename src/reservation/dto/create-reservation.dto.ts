@@ -1,5 +1,5 @@
 import { Type } from "class-transformer";
-import { IsDate, IsDateString, IsNumber, IsString, IsUUID, Matches } from "class-validator";
+import { IsDate, IsDateString, IsNumber, IsString, IsUUID, Matches, Max, Min } from "class-validator";
 
 
 
@@ -22,6 +22,7 @@ export class CreateReservationDto {
     start_time:string;
 
 
+
     @IsString()
     @Matches(CreateReservationDto.TIME_REGEX, {
         message: 'end time must be in HH:mm format (00:00 - 23:59)',
@@ -34,6 +35,12 @@ export class CreateReservationDto {
     @Type(()=>Number)
     quantity:number;
 
+
+    @IsNumber()
+    @Type(()=>Number)
+    @Min(1)
+    @Max(7)
+    reservation_day:number
 
 
 

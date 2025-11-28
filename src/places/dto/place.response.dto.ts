@@ -37,7 +37,7 @@ export class PlaceResponseDto {
 
   @Expose()
   @Type(()=>OpeningHoursResponseDto)
-  opening_hours:OpeningHoursResponseDto;
+  opening_hours:OpeningHoursResponseDto[];
 
   @Expose()
   @Type(() => ImageResponseDto)  

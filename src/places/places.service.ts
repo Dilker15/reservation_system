@@ -124,6 +124,7 @@ export class PlacesService {
     }catch(error){
        if(error instanceof BadRequestException){
           throw error;
+          
        }
        this.logger.error(error,error.stack);
        throw new InternalServerErrorException("Something was wrong");

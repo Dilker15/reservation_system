@@ -16,6 +16,7 @@ import { ImageUploadModule } from './image-upload/image-upload.module';
 import { LocationsModule } from './locations/locations.module';
 import { OpeningHoursModule } from './opening-hours/opening-hours.module';
 import { ReservationModule } from './reservation/reservation.module';
+import { PaymentMpModule } from './payment-mp/payment-mp.module';
 
 
 @Module({
@@ -61,6 +62,7 @@ import { ReservationModule } from './reservation/reservation.module';
     LocationsModule,
     OpeningHoursModule,
     ReservationModule,
+    PaymentMpModule,
 
   ],
   controllers: [AppController],
