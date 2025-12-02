@@ -52,3 +52,11 @@ export enum RESERVATION_STATUS {
   IN_PROGRESS = "IN_PROGRESS",      // El usuario está utilizando el servicio
   COMPLETED = "COMPLETED",          // Finalizada correctamente
 }
+
+
+export enum PAYMENTS_STATUS {
+  CREATED = "CREATED",             
+  PAID = "PAID",                    
+  CANCELLED = "CANCELLED",
+  UPDATED = "UPDATED"
+}
