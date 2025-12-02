@@ -19,10 +19,11 @@ export class PreferencesMp{
                     items: data.items,
                     back_urls: data.backUrls,
                     auto_return: 'approved',
-                    notification_url: "local:4000-test",
+                    notification_url: "https://webhook.site/be335547-d85a-41ae-8e49-e45331cd6d73",
                     metadata:{
                         order_id:data.order
                     },
+                    external_reference:"referencia externa test",
                 },
     
                 

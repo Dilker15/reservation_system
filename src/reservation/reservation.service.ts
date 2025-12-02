@@ -1,33 +1,41 @@
+
 import { BadRequestException, ConflictException, HttpException, Injectable, InternalServerErrorException } from '@nestjs/common';
 import { CreateReservationDto } from './dto/create-reservation.dto';
-import { UpdateReservationDto } from './dto/update-reservation.dto';
 import { PlacesService } from 'src/places/places.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Reservation } from './entities/reservation.entity';
-import { In, LessThan, MoreThan, Not, Repository } from 'typeorm';
+import {Repository } from 'typeorm';
 import { User } from 'src/users/entities/user.entity';
-import { RESERVATION_STATUS } from 'src/common/Interfaces';
-import { Http } from 'winston/lib/winston/transports';
+import { BookingModeType, RESERVATION_STATUS } from 'src/common/Interfaces';
 import { SelectQueryBuilder } from 'typeorm/browser';
-import { Place } from 'src/places/entities/place.entity';
+
 import { PlaceResponseDto } from 'src/places/dto/place.response.dto';
+import { DataSource } from "typeorm"; 
+
 
 @Injectable()
 export class ReservationService {
 
   
-  constructor(private readonly placeService:PlacesService,@InjectRepository(Reservation) private readonly reservationRepo:Repository<Reservation>){
+  constructor(private readonly placeService:PlacesService,@InjectRepository(Reservation) private readonly reservationRepo:Repository<Reservation>,
+              private readonly dataSource:DataSource,
+){
   }
 
 
 
   async create(createReservationDto: CreateReservationDto, client: User) {
-    const { place_id, start_time, end_time } = createReservationDto;
-    const place = await this.placeService.findOne(place_id);
+    const { place_id,} = createReservationDto;
+    const placeFound = await this.placeService.findOne(place_id); 
+    this.validateBookingTypeFromDto(placeFound.booking_mode.type,createReservationDto);
+    //this.validateDataFromDto(placeFound.booking_mode.type,createReservationDto);
+    const reservationDate = new Date(`${createReservationDto.reservation_start_date}T00:00:00`);
 
-    const reservationDate = new Date(`${createReservationDto.date_reservation}T00:00:00`);
-    this.validateDayAndTimes(place,createReservationDto.reservation_day,start_time,end_time);
-
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+  
+    
     try {
       const occupied = await this.getOverlappingReservations(createReservationDto, reservationDate);
 
@@ -40,35 +48,60 @@ export class ReservationService {
               })),
             });
           }
-          
-
-        const amount = this.calculateHours(start_time, end_time);
-
-        const reservation = this.reservationRepo.create({
-            amount,
-            created_on: new Date(),
-            reservation_date: reservationDate,
-            start_time,
-            end_time,
-            status: RESERVATION_STATUS.CREATED,
-            place: { id: place_id },
-            user: { id: client.id },
-        });
-
-        await this.reservationRepo.save(reservation);
+        
         return {
           message: "Reservation successfully created. Please proceed with payment to confirm your booking.",
-          reservation,
+          //reservation,
         };
       } catch (error) {
         if (error instanceof HttpException) {
           throw error;
         }
+        console.log(error);
         throw new InternalServerErrorException("Internal server error while creating reservation.");
       }
   }
 
 
+
+    private validateBookingTypeFromDto(bookinType:string,dto: CreateReservationDto):void{
+    
+      switch (bookinType) {
+        case BookingModeType.HOURLY:
+          this.validateHourlyReservationDto(dto);
+          return;
+    
+        case BookingModeType.WEEKLY:
+          this.validateWeeklyReservationDto(dto);
+          return;
+    
+        case BookingModeType.MONTHLY:
+          this.validateMonthlyReservationDto(dto);
+          return;
+    
+        default:
+          throw new BadRequestException(
+            `Unsupported booking mode type: ${bookinType}`
+          );
+      }
+    }
+    
+
+
+  private validateDayliDataFromDto(bookingType:string,data:CreateReservationDto):void{
+      
+      switch(bookingType){
+          case BookingModeType.DAILY:
+            
+            return;
+          
+          case BookingModeType.WEEKLY:
+            return;
+
+          case BookingModeType.MONTHLY:
+            return;
+      }
+  }
 
 
   private calculateHours(start: string, end: string): number {
@@ -88,11 +121,11 @@ export class ReservationService {
   }
 
 
+
   private generateQueryReservation(dataQuery:CreateReservationDto,reservationDate:Date):SelectQueryBuilder<Reservation>{
-    
       const query = this.reservationRepo.createQueryBuilder("r")
                                             .where("r.place_id = :placeId", { placeId: dataQuery.place_id })
-                                            .andWhere("r.reservation_date = :reservationDate", { reservationDate })
+                                            .andWhere("r.reservation_start_date = :reservationDate", { reservationDate })
                                             .andWhere("r.status IN (:...statuses)", {
                                               statuses: [RESERVATION_STATUS.IN_PROGRESS,RESERVATION_STATUS.CREATED,RESERVATION_STATUS.PAID],
                                             })
@@ -105,12 +138,14 @@ export class ReservationService {
   }
 
 
+
   private async getOverlappingReservations(dataQuery: CreateReservationDto, reservationDate: Date): Promise<Reservation[]> {
     return await this.generateQueryReservation(dataQuery, reservationDate).getMany();
   }
 
-  private validateDayAndTimes(place: PlaceResponseDto,day: number,start_time: string,end_time: string):void {
 
+
+  private validateDayAndHours(place: PlaceResponseDto,day: number,start_time: string,end_time: string):void {
     const { opening_hours } = place;
     const schedule = opening_hours.find(h => h.day === day);
 
@@ -127,7 +162,37 @@ export class ReservationService {
   }
 
 
+  private validateHourlyReservationDto(data: CreateReservationDto): void {
+    this.ensureFields(data,['reservation_day','reservation_start_date', 'start_time', 'end_time','quantity'],'Hourly reservation');
+
+  }
+
+
+  private validateWeeklyReservationDto(data: CreateReservationDto): void {
+    this.ensureFields(data,['reservation_start_date', 'reservation_end_date', 'place_id', 'quantity'],'Weekly reservation');
+  }
+
+
+  private validateMonthlyReservationDto(data: CreateReservationDto): void {
+    this.ensureFields(data,['reservation_start_date', 'reservation_end_date', 'place_id', 'quantity'],'Monthly reservation');
+  }
+  
+  
+
+
+  private ensureFields(data: CreateReservationDto, requiredFields: string[], context: string): void {
+    const missing = requiredFields.filter(field => !data[field]);
+    if (missing.length > 0) {
+        throw new BadRequestException(
+            `Invalid ${context}. Missing fields: ${missing.join(', ')}`
+        );
+    }
+  }
+
+  
+
 
 
   
 }
+

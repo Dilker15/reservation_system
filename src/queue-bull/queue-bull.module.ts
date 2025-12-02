@@ -14,10 +14,29 @@ import { AppLoggerModule } from 'src/logger/logger.module';
   imports:[
     BullModule.registerQueue(
     {
-      name:'emails-queue'
+      name:'emails-queue',
+      defaultJobOptions: {
+        attempts: 3,           
+        backoff: {
+          type: 'exponential', 
+          delay: 5000    
+        },
+        removeOnComplete: true,
+        removeOnFail: false
+      }
     },
     {
       name:'imageupload-queue',
+      defaultJobOptions: {
+        attempts: 5,           
+        backoff: {
+          type: 'exponential', 
+          delay: 3000    
+        },
+        removeOnComplete: true,
+        removeOnFail: false
+      }
+      
     }
 
   ),
