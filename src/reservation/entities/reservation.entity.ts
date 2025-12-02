@@ -1,7 +1,7 @@
 import { RESERVATION_STATUS } from "src/common/Interfaces";
 import { Place } from "src/places/entities/place.entity";
 import { User } from "src/users/entities/user.entity";
-import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, Index, JoinColumn, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 
 @Entity({name:'reservations'})
 export class Reservation {

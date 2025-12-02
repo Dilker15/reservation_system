@@ -27,8 +27,9 @@ export class ReservationService {
   async create(createReservationDto: CreateReservationDto, client: User) {
     const { place_id,} = createReservationDto;
     const placeFound = await this.placeService.findOne(place_id); 
-    this.validateBookingTypeFromDto(placeFound.booking_mode.type,createReservationDto);
-    //this.validateDataFromDto(placeFound.booking_mode.type,createReservationDto);
+    const {type} = placeFound.booking_mode;
+    this.validateFields(type,createReservationDto);
+    this.validateData(type,placeFound,createReservationDto);
     const reservationDate = new Date(`${createReservationDto.reservation_start_date}T00:00:00`);
 
     const queryRunner = this.dataSource.createQueryRunner();
@@ -64,45 +65,125 @@ export class ReservationService {
 
 
 
-    private validateBookingTypeFromDto(bookinType:string,dto: CreateReservationDto):void{
-    
+    private validateFields(bookinType:string,dto: CreateReservationDto):void{
       switch (bookinType) {
         case BookingModeType.HOURLY:
-          this.validateHourlyReservationDto(dto);
+          this.validateHourlyFieldsDto(dto);
           return;
     
         case BookingModeType.WEEKLY:
-          this.validateWeeklyReservationDto(dto);
+          this.validateWeeklyFieldsDto(dto);
           return;
     
         case BookingModeType.MONTHLY:
-          this.validateMonthlyReservationDto(dto);
+          this.validateMonthlyFieldsDto(dto);
           return;
     
         default:
           throw new BadRequestException(
-            `Unsupported booking mode type: ${bookinType}`
+            `Unsupported booking mode type field: ${bookinType}`
           );
       }
     }
     
 
 
-  private validateDayliDataFromDto(bookingType:string,data:CreateReservationDto):void{
-      
-      switch(bookingType){
-          case BookingModeType.DAILY:
-            
-            return;
-          
-          case BookingModeType.WEEKLY:
-            return;
+    private validateData(bookingType:string,place:PlaceResponseDto,data:CreateReservationDto):void{
+        
+        switch(bookingType){
+            case BookingModeType.HOURLY:
+               this.validateHourlyInformation(place,data);
+              return;
+            case BookingModeType.WEEKLY:
+              this.validateWeeklyInformation(place,data);
+              return;
 
-          case BookingModeType.MONTHLY:
+            case BookingModeType.MONTHLY:
+              this.validateMonthlyInformation(place,data);
             return;
+            default:
+                throw new BadRequestException(
+              `Unsupported booking mode type data: ${bookingType}`
+            );
+        }
+    }
+
+
+
+ 
+
+    private async validateHourlyInformation(place: PlaceResponseDto,data: CreateReservationDto): Promise<void> {
+      const { reservation_day, start_time, end_time } = data;
+
+      const schedule = place.opening_hours.find(
+        (day) => day.day === reservation_day
+      );
+
+      if (!schedule) {
+        throw new BadRequestException(
+          `The day "${reservation_day}" is not available for booking.`
+        );
       }
+
+      const { open_time, close_time } = schedule;
+
+      const openMin = this.parseTimeToMinutes(open_time);
+      const startMin = this.parseTimeToMinutes(start_time!);
+      const endMin = this.parseTimeToMinutes(end_time!);
+      const closeMin = this.parseTimeToMinutes(close_time);
+
+      console.log(openMin);
+      console.log(startMin);
+      console.log(endMin);
+      console.log(closeMin);
+      const isValidRange =openMin <= startMin && startMin < endMin &&endMin <= closeMin;
+
+      if (!isValidRange) {
+        throw new BadRequestException(
+          `Invalid time range "${start_time}-${end_time}". Allowed window is "${open_time}-${close_time}".`
+        );
+      }
+    }
+
+  private async validateWeeklyInformation(place:PlaceResponseDto,data:CreateReservationDto):Promise<void>{
+
   }
 
+
+  private async validateMonthlyInformation(place:PlaceResponseDto,date:CreateReservationDto):Promise<void>{
+
+  }
+
+
+  private validateHourlyFieldsDto(data: CreateReservationDto): void {
+    this.ensureFields(data,['reservation_day','reservation_start_date', 'start_time', 'end_time','quantity'],'Hourly reservation');
+
+  }
+
+
+  private validateWeeklyFieldsDto(data: CreateReservationDto): void {
+    this.ensureFields(data,['reservation_start_date', 'reservation_end_date', 'place_id', 'quantity'],'Weekly reservation');
+  }
+
+
+  private validateMonthlyFieldsDto(data: CreateReservationDto): void {
+    this.ensureFields(data,['reservation_start_date', 'reservation_end_date', 'place_id', 'quantity'],'Monthly reservation');
+  }
+  
+  
+
+
+  private ensureFields(data: CreateReservationDto, requiredFields: string[], context: string): void {
+    const missing = requiredFields.filter(field => !data[field]);
+    if (missing.length > 0) {
+        throw new BadRequestException(
+            `Invalid ${context}. Missing fields: ${missing.join(', ')}`
+        );
+    }
+  }
+
+  
+  
 
   private calculateHours(start: string, end: string): number {
       const [sH, sM] = start.split(":").map(Number);
@@ -119,6 +200,24 @@ export class ReservationService {
 
       return diff;
   }
+
+   private parseTimeToMinutes (time: string):number{
+        if (!time) {
+          throw new BadRequestException(`Invalid time format: "${time}".`);
+        }
+
+        const [h, m, s = "0"] = time.split(":");
+
+        const hours = Number(h);
+        const minutes = Number(m);
+        const seconds = Number(s);
+
+        if (Number.isNaN(hours) ||Number.isNaN(minutes) || Number.isNaN(seconds)) {
+          throw new BadRequestException(`Invalid time format: "${time}".`);
+        }
+
+        return hours * 60 + minutes + seconds / 60;
+  };
 
 
 
@@ -143,53 +242,6 @@ export class ReservationService {
     return await this.generateQueryReservation(dataQuery, reservationDate).getMany();
   }
 
-
-
-  private validateDayAndHours(place: PlaceResponseDto,day: number,start_time: string,end_time: string):void {
-    const { opening_hours } = place;
-    const schedule = opening_hours.find(h => h.day === day);
-
-    if (!schedule) {
-      throw new BadRequestException(`The day ${day} is not available for booking`);
-    }
-    const { open_time, close_time } = schedule;
-
-    if (!(open_time <= start_time && start_time < end_time && end_time <= close_time)) {
-      throw new BadRequestException(
-        `The time range ${start_time}-${end_time} is outside the allowed hours: ${open_time}-${close_time}`
-      );
-    }
-  }
-
-
-  private validateHourlyReservationDto(data: CreateReservationDto): void {
-    this.ensureFields(data,['reservation_day','reservation_start_date', 'start_time', 'end_time','quantity'],'Hourly reservation');
-
-  }
-
-
-  private validateWeeklyReservationDto(data: CreateReservationDto): void {
-    this.ensureFields(data,['reservation_start_date', 'reservation_end_date', 'place_id', 'quantity'],'Weekly reservation');
-  }
-
-
-  private validateMonthlyReservationDto(data: CreateReservationDto): void {
-    this.ensureFields(data,['reservation_start_date', 'reservation_end_date', 'place_id', 'quantity'],'Monthly reservation');
-  }
-  
-  
-
-
-  private ensureFields(data: CreateReservationDto, requiredFields: string[], context: string): void {
-    const missing = requiredFields.filter(field => !data[field]);
-    if (missing.length > 0) {
-        throw new BadRequestException(
-            `Invalid ${context}. Missing fields: ${missing.join(', ')}`
-        );
-    }
-  }
-
-  
 
 
 

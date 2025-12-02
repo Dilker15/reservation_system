@@ -1,15 +1,14 @@
 import { PAYMENTS_STATUS } from "src/common/Interfaces";
-import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 
 
 
 @Entity({name:'payments'})
-export class Payments{
+export class Payment{
 
 
     @PrimaryGeneratedColumn('uuid')
     id:string;
-
 
 
     @Column({name:'payment_id',type:'varchar', length:64})
@@ -38,6 +37,17 @@ export class Payments{
     @Column({name:'status' , type:'enum' , enum:PAYMENTS_STATUS,default:PAYMENTS_STATUS.CREATED})
     status:PAYMENTS_STATUS
 
+
+    @Column({name: 'amount',type: 'decimal',precision: 10,scale: 2,default: '0.00'})
+    amount: string;
+
+
+    @CreateDateColumn({name: 'created_at', type: 'timestamptz'})
+    created_at: Date;
+
+
+    @UpdateDateColumn({name: 'updated_at',type: 'timestamptz'})
+    updated_at: Date;
 
 
 
