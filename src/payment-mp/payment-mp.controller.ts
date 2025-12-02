@@ -13,6 +13,7 @@ export class PaymentMpController {
   @Public()
   @Post('checkout')
   async createPaymente(){
+    console.log("checkout")
     const dat = await this.paymentMpService.payTest();
     return dat;
   }

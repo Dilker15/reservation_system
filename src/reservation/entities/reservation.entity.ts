@@ -12,9 +12,13 @@ export class Reservation {
 
 
     @Column({ type: 'date', default: () => 'CURRENT_DATE' })
-    reservation_date: Date;
+    reservation_start_date: Date;
 
 
+
+    @Column({ type: 'date', default: () => 'CURRENT_DATE' })
+    reservation_end_date: Date;
+    
 
     @Column({name:'start_time' , type :'time without time zone'})
     start_time:Date
