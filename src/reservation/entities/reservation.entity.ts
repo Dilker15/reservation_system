@@ -1,9 +1,15 @@
 import { RESERVATION_STATUS } from "src/common/Interfaces";
 import { Place } from "src/places/entities/place.entity";
 import { User } from "src/users/entities/user.entity";
-import { Column, CreateDateColumn, Entity, Index, JoinColumn, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, Index, JoinColumn, ManyToOne, PrimaryGeneratedColumn, Unique, UpdateDateColumn } from "typeorm";
 
 @Entity({name:'reservations'})
+@Index('idx_creation',['place','reservation_start_date','start_time','end_time'],
+    {
+    unique: true,
+    where: `"status" <> 'CANCELLED'` 
+   }
+)
 export class Reservation {
 
 
@@ -21,16 +27,20 @@ export class Reservation {
     
 
     @Column({name:'start_time' , type :'time without time zone'})
-    start_time:Date
+    start_time:string;
 
 
     @Column({name:'end_time' , type:'time without time zone' })
-    end_time:Date
+    end_time:string;
 
 
     @Column({name:'status' ,type:'enum', enum:RESERVATION_STATUS, default:RESERVATION_STATUS.CREATED})
     status:RESERVATION_STATUS
     
+    
+    @Column({name:'total_price', type:'float', default:0})
+    total_price:number;
+
 
     @Column({name:'amount', type:'float' , default:0})
     amount:number
@@ -43,7 +53,7 @@ export class Reservation {
 
 
     @ManyToOne(()=>User,(user)=>user.reservations,{onDelete:'CASCADE',nullable:true})
-    @JoinColumn({name:'user_id'})
+    @JoinColumn({name:'client_id'})
     user:User;
 
     @CreateDateColumn({name:'created_on' , type:'timestamp'})

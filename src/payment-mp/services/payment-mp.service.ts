@@ -5,7 +5,7 @@ import { PreferencesMp } from './preference.service';
 export class PaymentMpService {
   constructor(private readonly preferences: PreferencesMp) {}
 
-  async payTest() {
+  async payTest() { // TEST MP INTEGRATIONS.
     try{
       const preference = await this.preferences.createPreference({
         items: [
@@ -13,6 +13,7 @@ export class PaymentMpService {
           { title: "Producto 2", quantity: 1, unit_price: 300 , description: "Descripción del producto 2", id:2},
         ],
   
+
         backUrls: {
           success: "https://www.test.com/success",
           failure: "https://www.test.com/failure",

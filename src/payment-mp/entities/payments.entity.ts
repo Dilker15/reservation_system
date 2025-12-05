@@ -1,3 +1,4 @@
+import { Preference } from "mercadopago";
 import { PAYMENTS_STATUS } from "src/common/Interfaces";
 import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 
@@ -16,7 +17,7 @@ export class Payment{
 
 
 
-    @Column({name:'payment_type_id', type:'varchar'}) // DEBIT, CREDIT , MP ACCOUNT , ETC
+    @Column({name:'payment_type', type:'varchar'}) // DEBIT, CREDIT , MP ACCOUNT , ETC
     payment_type_id:string;
 
 
@@ -34,6 +35,16 @@ export class Payment{
     payer_email:string;
 
 
+
+    @Column({name:'preference_id', type:'varchar'})
+    preference_id:string;
+
+
+
+    @Column({name:'preference',type:'varchar'})
+    preference:string;
+
+
     @Column({name:'status' , type:'enum' , enum:PAYMENTS_STATUS,default:PAYMENTS_STATUS.CREATED})
     status:PAYMENTS_STATUS
 
@@ -48,6 +59,7 @@ export class Payment{
 
     @UpdateDateColumn({name: 'updated_at',type: 'timestamptz'})
     updated_at: Date;
+
 
 
 
