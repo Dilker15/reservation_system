@@ -370,10 +370,16 @@ export class PlacesService {
 
   private buildQueryFilterPlaces(queryParams:PaginationDto,owner?:string){
       const querySql = this.placeRepo.createQueryBuilder('place')
+      .select(['place.id','place.name','place.description','place.price'])
       .innerJoin("place.category",'cat')
       .innerJoin("place.city","cit")
+      .innerJoin('cit.country', 'country')
       .innerJoin("place.booking_mode","bmod")
       
+      querySql.addSelect(['bmod.name']);
+      querySql.addSelect(['cit.name']);
+      querySql.addSelect(['country.name']);
+
       if(queryParams.category){
         querySql.andWhere('cat.id = :idCategory',{idCategory:queryParams.category})
       }
