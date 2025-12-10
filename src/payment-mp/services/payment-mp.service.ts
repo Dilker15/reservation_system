@@ -1,9 +1,14 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { PreferencesMp } from './preference.service';
+import { PaymentProvider } from '../strategies/PaymentProvider';
+import { PaymentStrategyFactory } from '../strategies/PaymentStrategyFactory';
+import { PROVIDERS } from 'src/common/Interfaces';
 
 @Injectable()
 export class PaymentMpService {
-  constructor(private readonly preferences: PreferencesMp) {}
+
+
+  constructor(private readonly preferences: PreferencesMp,private readonly paymentStrategy:PaymentStrategyFactory) {}
 
   async payTest() { // TEST MP INTEGRATIONS.
     try{

@@ -60,3 +60,10 @@ export enum PAYMENTS_STATUS {
   CANCELLED = "CANCELLED",
   UPDATED = "UPDATED"
 }
+
+
+export enum PROVIDERS {
+
+  MP = 'MERCADO_PAGO',
+  STRIPE = 'STRIPE',
+}

@@ -1,21 +1,24 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, ParseUUIDPipe, ParseEnumPipe } from '@nestjs/common';
 import { PaymentMpService } from './services/payment-mp.service';
 import { Public } from 'src/auth/decorators/public.decorator';
+import { PROVIDERS } from 'src/common/Interfaces';
+import { PaymentService } from './services/payment.service';
 
 @Controller('payment-mp')
 export class PaymentMpController {
 
-  constructor(private readonly paymentMpService: PaymentMpService) {
+  constructor(private readonly paymentServices:PaymentService) {
 
   }
 
 
   @Public()
-  @Post('checkout')
-  async createPaymente(){
-    console.log("checkout")
-    const dat = await this.paymentMpService.payTest();
-    return dat;
+  @Get('checkout/:reservation/:provider')
+  async createPayment(@Param('reservation',ParseUUIDPipe) reservation:string,@Param('provider',new ParseEnumPipe(PROVIDERS)) provider:PROVIDERS){
+    return await this.paymentServices.createPayment(reservation,provider);
   }
+
+
+
 
 }

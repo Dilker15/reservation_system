@@ -85,7 +85,7 @@ export class HourlyStrategy implements BookingStrategy {
 
         r.reservation_start_date = stringToDateOnly(dto.reservation_start_date);
         r.reservation_end_date = stringToDateOnly(dto.reservation_start_date);
-        r.total_price = amount * pricePlace;
+        r.total_price = pricePlace,
         r.place = { id: placeId } as any;
         r.user = user;
         r.status = RESERVATION_STATUS.CREATED;

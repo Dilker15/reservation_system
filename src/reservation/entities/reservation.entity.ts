@@ -1,7 +1,8 @@
 import { RESERVATION_STATUS } from "src/common/Interfaces";
+import { PaymentIntent } from "src/payment-mp/entities/payments.entity";
 import { Place } from "src/places/entities/place.entity";
 import { User } from "src/users/entities/user.entity";
-import { Column, CreateDateColumn, Entity, Index, JoinColumn, ManyToOne, PrimaryGeneratedColumn, Unique, UpdateDateColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, Index, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn, Unique, UpdateDateColumn } from "typeorm";
 
 @Entity({name:'reservations'})
 @Index('idx_creation',['place','reservation_start_date','start_time','end_time'],
@@ -55,6 +56,10 @@ export class Reservation {
     @ManyToOne(()=>User,(user)=>user.reservations,{onDelete:'CASCADE',nullable:true})
     @JoinColumn({name:'client_id'})
     user:User;
+
+
+    @OneToMany(()=>PaymentIntent,(pay)=>pay.reservation)
+    payment_intents:PaymentIntent[];
 
     @CreateDateColumn({name:'created_on' , type:'timestamp'})
     created_on:Date
