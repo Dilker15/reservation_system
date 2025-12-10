@@ -44,10 +44,14 @@ export class ReservationService {
         const saved = await repo.save(reservationEntity);
         
         return {
-          message: 'Reservation successfully created. Please proceed with payment to confirm your booking.',
+          message: `Reservation successfully created. Please proceed with the payment to confirm your booking.
+                    Please note: your reservation will be held for only 10 minutes.
+                    If payment is not completed within this time, it will be automatically released`,
           reservation: saved,
         };
       });
+      delete transacctionCreated['reservation']['user'];
+      return transacctionCreated;
     } catch (err) {
       if (err?.response || err?.status) throw err;
        console.error(err);
