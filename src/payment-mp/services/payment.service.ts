@@ -1,107 +1,115 @@
-import { BadRequestException, Injectable, InternalServerErrorException, NotFoundException } from "@nestjs/common";
+import { 
+    Injectable, 
+    NotFoundException, 
+    InternalServerErrorException, 
+} from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository } from "typeorm";
+import { ConfigService } from "@nestjs/config";
+import { v4 as uuidv4 } from 'uuid';
+
 import { PaymentStrategyFactory } from "../strategies/PaymentStrategyFactory";
 import { CreatePaymentData, CreatePaymentResponse } from "../interfaces/create.payment";
-import { InjectRepository } from "@nestjs/typeorm";
 import { Reservation } from "src/reservation/entities/reservation.entity";
-import { Repository } from "typeorm";
 import { PROVIDERS, RESERVATION_STATUS } from "src/common/Interfaces";
-import { ConfigService } from "@nestjs/config";
 import { PaymentIntent } from "../entities/payments.entity";
-import { id } from "date-fns/locale";
-
 
 
 @Injectable()
-export class PaymentService{
+export class PaymentService {
+    
 
-    constructor(private readonly paymentFactory:PaymentStrategyFactory,
-                @InjectRepository(Reservation) private readonly reservationRepo:Repository<Reservation>,
-                private readonly configService:ConfigService,
-                @InjectRepository(PaymentIntent) private readonly paymentIntentRepo:Repository<PaymentIntent>,
-    ){
+    constructor(
+        private readonly paymentFactory: PaymentStrategyFactory,
+        @InjectRepository(Reservation) private readonly reservationRepo: Repository<Reservation>,
+        private readonly configService: ConfigService,
+        @InjectRepository(PaymentIntent) private readonly paymentIntentRepo: Repository<PaymentIntent>,
+    ) {}
 
-    }
-
-
-    async createPayment(reservationId: string, provider: PROVIDERS):Promise<CreatePaymentResponse> {
-
+    async createPayment(reservationId: string, provider: PROVIDERS): Promise<CreatePaymentResponse> {
+        
+       
         const reservation = await this.reservationRepo.findOne({
             where: { id: reservationId, status: RESERVATION_STATUS.CREATED },
             relations: ['place']
         });
     
         if (!reservation) {
-            throw new NotFoundException("Reservation not found");
+           
+            throw new NotFoundException("Reservation not found or payment already initiated/completed");
         }
-    
+        
+      
+        const intentId = uuidv4();
+        const paymentData = this.mapReservationToPaymentData(reservation, provider, intentId);
+        
+        try {
+           
+            const strategy = this.paymentFactory.getStretegy(provider);
+            const preference = await strategy.createPayment(paymentData);
+            
+          
+            await this.paymentIntentRepo.save({
+                external_reference: preference.external_reference,
+                preference_id: preference.id,
+                preference_link: preference.init_point,
+                provider: provider,
+                reservation,
+            });
+
+            return {
+                intentPaymentId: preference.id!,
+                paymentLink: preference.init_point!,
+                provider: paymentData.provider,
+                raw: reservation.id,
+            };
+
+        } catch (error) {
+            throw new InternalServerErrorException(`Failed to create payment preference with provider ${provider}.`);
+        }
+    }
+
+
+
+    private mapReservationToPaymentData( reservation: Reservation,provider: PROVIDERS,intentId: string): CreatePaymentData {
        
-    
-        const strategy = this.paymentFactory.getStretegy(provider);
-    
-        const data: CreatePaymentData = {
+        const totalAmount = reservation.amount * reservation.total_price;
+        const config = (key: string) => this.configService.get<string>(key);
+
+        return {
             provider,
             reservationId: reservation.id,
-    
-            amount: reservation.amount * reservation.total_price,
-            currency: 'ARS',
-    
-            items: [
-                {
-                    name:reservation.place.name,
-                    id: reservation.id,
-                    quantity: reservation.amount,
-                    unit_price: reservation.total_price,
-                    title: reservation.place.name,
-                    description: reservation.place.description,
-                }
-            ],
-    
+            amount: totalAmount,
+            currency: 'ARS',         // TODO: make currency configurable by the webmaster in the future
+            
+            items: [{
+                name: reservation.place.name,
+                id: reservation.id,
+                quantity: reservation.amount,
+                unit_price: reservation.total_price,
+                title: reservation.place.name,
+                description: reservation.place.description,
+            }],
+            
             metadata: {
                 reservationId: reservation.id,
             },
-    
+            
             auto_return: "approved",
-    
+            
             back_urls: {
-                failure: this.configService.get('BACK_URL_FAILURE')!,
-                pending: this.configService.get('BACK_URL_PENDING')!,
-                success: this.configService.get('BACK_URL_SUCCESS')!,
+                failure: config('BACK_URL_FAILURE')!,
+                pending: config('BACK_URL_PENDING')!,
+                success: config('BACK_URL_SUCCESS')!,
             },
-    
-            notification_url: this.configService.get('NOTIFICATION_URL')!,
+            intent_id: intentId,
+            notification_url: config('NOTIFICATION_URL')!,
         };
-        
-        try{
-            const preference = await strategy.createPayment(data);
-            const paymentIntent = await this.paymentIntentRepo.save({
-                external_reference:preference.external_reference,
-                preference_id:preference.id,
-                preference_link:preference.init_point,
-                provider:provider,
-                reservation,
-            });
-            console.log(paymentIntent);
-            return {
-                    intentPaymentId:preference.id!,
-                    paymentLink:preference.init_point!,
-                    provider:data.provider,
-                    raw:preference.external_reference,
-            }
-        }catch(error){
-            console.log(error);
-            throw new InternalServerErrorException("Error on payments");
-        }
-       
     }
-    
-
-
-    
-
-
-
-
-
-
-
 }
+
+
+
+
+
+

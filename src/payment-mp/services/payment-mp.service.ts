@@ -1,6 +1,6 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { PreferencesMp } from './preference.service';
-import { PaymentProvider } from '../strategies/PaymentProvider';
+import { PaymentProvider } from '../interfaces/PaymentProvider';
 import { PaymentStrategyFactory } from '../strategies/PaymentStrategyFactory';
 import { PROVIDERS } from 'src/common/Interfaces';
 

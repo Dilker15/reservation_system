@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable } from "@nestjs/common";
 import { PROVIDERS } from "src/common/Interfaces";
-import { PaymentProvider } from "./PaymentProvider";
+import { PaymentProvider } from "../interfaces/PaymentProvider";
 import { MercadoPagoStrategy } from "./MercadoPagoStrategy";
 import { StripeStrategy } from "./StripeStrategy";
 
