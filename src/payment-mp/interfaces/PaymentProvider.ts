@@ -1,6 +1,6 @@
 import { PreferenceResponse } from "mercadopago/dist/clients/preference/commonTypes";
-import { CreatePaymentData, CreatePaymentResponse } from "../interfaces/create.payment";
-import { VerifyPaymentResult } from "../interfaces/verify.payment";
+import { CreatePaymentData, CreatePaymentResponse } from "./create.payment";
+import { VerifyPaymentResult } from "./verify.payment";
 
 
 

@@ -31,6 +31,7 @@ export interface CreatePaymentData{
     metadata:any,
     notification_url?: string,
     back_urls:BackUrls,
+    intent_id:string,
 } 
 
 

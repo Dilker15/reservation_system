@@ -1,7 +1,7 @@
 import { Inject, Injectable, InternalServerErrorException } from "@nestjs/common";
 import { CreatePaymentData, CreatePaymentResponse } from "../interfaces/create.payment";
 import { VerifyPaymentResult } from "../interfaces/verify.payment";
-import { PaymentProvider } from "./PaymentProvider";
+import { PaymentProvider } from "../interfaces/PaymentProvider";
 import MercadoPagoConfig, { Preference } from "mercadopago";
 import { MP_CONFIG } from "../mp.config";
 import { PreferenceResponse } from "mercadopago/dist/clients/preference/commonTypes";
@@ -31,7 +31,7 @@ export class MercadoPagoStrategy implements PaymentProvider{
                     reservation:data.reservationId
                 },
                 back_urls:data.back_urls,
-                external_reference:String(data.reservationId),
+                external_reference:data.intent_id,
             },
 
         });

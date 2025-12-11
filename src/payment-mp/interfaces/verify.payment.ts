@@ -1,4 +1,4 @@
-import { PAYMENTS_STATUS } from "src/common/Interfaces";
+import { PAYMENTS_STATUS, PROVIDERS } from "src/common/Interfaces";
 
 
 
@@ -6,7 +6,7 @@ import { PAYMENTS_STATUS } from "src/common/Interfaces";
 
 export interface VerifyPaymentResult {
 
-    provider: 'stripe' | 'mp';
+    provider: PROVIDERS,
     paymentId: string;
     reservationId?: number;
     status: PAYMENTS_STATUS,
