@@ -9,6 +9,6 @@ import { VerifyPaymentResult } from "./verify.payment";
 export interface PaymentProvider{
 
     createPayment(data:CreatePaymentData):Promise<PreferenceResponse>;
-    verifyPayment(payload:any):Promise<VerifyPaymentResult>;
+    verifyPayment(payload:any):Promise<VerifyPaymentResult | null>;
 
 }

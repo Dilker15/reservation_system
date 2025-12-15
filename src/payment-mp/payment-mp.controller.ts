@@ -1,5 +1,4 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, ParseUUIDPipe, ParseEnumPipe } from '@nestjs/common';
-import { PaymentMpService } from './services/payment-mp.service';
 import { Public } from 'src/auth/decorators/public.decorator';
 import { PROVIDERS } from 'src/common/Interfaces';
 import { PaymentService } from './services/payment.service';
