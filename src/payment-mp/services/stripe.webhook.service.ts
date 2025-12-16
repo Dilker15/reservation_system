@@ -7,22 +7,9 @@ import { IWebhook } from "../interfaces/WebHookStrategy";
 export class StripeWebhookService implements IWebhook{
     
 
-    validateSignature(rawBody: string, signature: string): boolean {
-        throw new Error("Method not implemented.");
-    }
-
-
-    
-    parseEvent(payload: any): WebhookEventParse {
-        throw new Error("Method not implemented.");
-    }
-
-
     processEvent(event: WebhookEventParse): Promise<void> {
         throw new Error("Method not implemented.");
     }
-
-
 
 }
 
