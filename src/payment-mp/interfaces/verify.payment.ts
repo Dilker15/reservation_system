@@ -8,13 +8,13 @@ export interface VerifyPaymentResult {
 
     provider: PROVIDERS,
     paymentId: string;
-    reservationId?: number;
+    reservationId: string;
     status: string
     amount?: number;
     payerEmail?: string;
     payerName?: string;
     paymentMethod?: string,
     external_reference:string,
-
+    payerId?:string,
   }
   
