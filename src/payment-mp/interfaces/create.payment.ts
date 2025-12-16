@@ -43,3 +43,12 @@ export interface CreatePaymentData{
     provider: string;       
     raw: any;      
 }
+
+
+export interface WebhookEventParse {
+  id: string;
+  type: string;
+  provider: PROVIDERS;
+  data: any;
+  timestamp: Date;
+}

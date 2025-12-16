@@ -103,8 +103,14 @@ export class PaymentService {
                 success: config('BACK_URL_SUCCESS')!,
             },
             intent_id: intentId,
-            notification_url: config('NOTIFICATION_URL')!,
+            notification_url: this.generateUrlNotification()
         };
+    }
+
+    private generateUrlNotification():string{
+        const urlApp = this.configService.get<string>('APP_URL')! + '/api/v1/reservations/webhook/mercado-pago';
+        console.log("URL CLOUDFARE FOR WEBHOOK : ",urlApp)
+        return urlApp;
     }
 }
 
