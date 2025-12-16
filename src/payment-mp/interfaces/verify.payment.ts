@@ -9,11 +9,12 @@ export interface VerifyPaymentResult {
     provider: PROVIDERS,
     paymentId: string;
     reservationId?: number;
-    status: PAYMENTS_STATUS,
+    status: string
     amount?: number;
     payerEmail?: string;
     payerName?: string;
-    raw?: any;
+    paymentMethod?: string,
+    external_reference:string,
 
   }
   

@@ -10,12 +10,18 @@ import { StripeStrategy } from './strategies/StripeStrategy';
 import { PaymentStrategyFactory } from './strategies/PaymentStrategyFactory';
 import { PaymentService } from './services/payment.service';
 import { Reservation } from 'src/reservation/entities/reservation.entity';
+import { StripeWebHookController } from './stripe.webhook.controller';
+import { MercadoPagoWebHookController } from './mp.webhook.controller';
+import { MercadoPagoWeebHookService } from './services/mp.webhook.service';
+import { StripeWebhookService } from './services/stripe.webhook.service';
 
 @Module({
   imports:[ConfigModule,
            TypeOrmModule.forFeature([PaymentIntent,Reservation])
   ],
-  controllers: [PaymentMpController],
-  providers: [PaymentService,mpConfigProvider,PreferencesMp,MercadoPagoStrategy,StripeStrategy,PaymentStrategyFactory],
+  controllers: [PaymentMpController,StripeWebHookController,MercadoPagoWebHookController],
+  providers: [PaymentService,mpConfigProvider,PreferencesMp,MercadoPagoStrategy,StripeStrategy,PaymentStrategyFactory,MercadoPagoWeebHookService,
+              StripeWebhookService
+  ],
 })
 export class PaymentMpModule {}
