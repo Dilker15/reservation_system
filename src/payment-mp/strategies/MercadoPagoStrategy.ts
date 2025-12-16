@@ -5,7 +5,7 @@ import { PaymentProvider } from "../interfaces/PaymentProvider";
 import { MercadoPagoConfig, Preference, Payment } from 'mercadopago';
 import { MP_CONFIG } from "../mp.config";
 import { PreferenceResponse } from "mercadopago/dist/clients/preference/commonTypes";
-import { PAYMENTS_STATUS, PROVIDERS } from "src/common/Interfaces";
+import {PROVIDERS } from "src/common/Interfaces";
 import { PaymentResponse } from "mercadopago/dist/clients/payment/commonTypes";
 
 
@@ -52,7 +52,7 @@ export class MercadoPagoStrategy implements PaymentProvider{
 
 
     async verifyPayment(payload: any): Promise<VerifyPaymentResult | null> {
-        const currentPayment: PaymentResponse = await this.payment.get({ id: payload.id });
+        const currentPayment: PaymentResponse = await this.payment.get({ id: payload });
 
         if (currentPayment.status !== 'approved') {
             return null;
@@ -74,6 +74,7 @@ export class MercadoPagoStrategy implements PaymentProvider{
             reservationId:data.metadata,
             paymentMethod:data.payment_method_id,
             external_reference:data.external_reference!,
+            payerId:data.payer?.id,
         }
     }
 
