@@ -1,7 +1,7 @@
 
 import { PAYMENTS_STATUS, PROVIDERS } from "src/common/Interfaces";
 import { Reservation } from "src/reservation/entities/reservation.entity";
-import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, Index, JoinColumn, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 
 
 
@@ -17,8 +17,9 @@ export class PaymentIntent{
     provider:PROVIDERS;
 
 
-    @Column({name:'payment_id',type:'varchar', length:64,nullable:true}) // webhook payment_id
-    payment_id:string;      
+    @Index('UQ_payment_id_not_null', ['payment_id'], { unique: true, where: '"payment_id" IS NOT NULL' })
+    @Column({ name: 'payment_id', type: 'varchar', length: 64, nullable: true })
+    payment_id: string;
 
 
 
@@ -48,10 +49,10 @@ export class PaymentIntent{
 
 
     @Column({ name: 'preference_link', type: 'varchar'})
-    preference_link: any;
+    preference_link: string;
 
 
-    @Column({ name: 'external_reference', type: 'varchar', length: 255 })
+    @Column({ name: 'external_reference', type: 'varchar', length: 255,unique:true })
     external_reference: string;
     
 

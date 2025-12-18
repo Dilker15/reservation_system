@@ -13,15 +13,15 @@ export class MercadoPagoWebHookController{
     }
 
    
-        @Public()
+        @Public() 
         @Post()
         @HttpCode(200)
         @UseGuards(MercadoPagoWebhookGuard)
         async handleEvent(@Body() body: any) {
             try {
-            await this.mercadoService.processEvent(body);
+             await this.mercadoService.processEvent(body);
             } catch (error) {
-            console.error('Webhook processing error:', error);
+              console.error('Webhook mp processing error:', error);
             }   
             return { status: 'received' };
         }
