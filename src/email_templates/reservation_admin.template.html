@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Reservation</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+            background-color: #f2f2f2;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 40px auto;
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+
+        .header {
+            background-color: #00AA6C;
+            color: #ffffff;
+            padding: 24px;
+            text-align: center;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+        }
+
+        .content {
+            padding: 32px 28px;
+        }
+
+        .intro {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .intro p {
+            font-size: 16px;
+            color: #4B5563;
+            margin: 6px 0;
+        }
+
+        .card {
+            background-color: #E6F4EF;
+            border-radius: 10px;
+            padding: 24px;
+        }
+
+        .item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(0,0,0,0.06);
+            font-size: 15px;
+            color: #333333;
+        }
+
+        .item:last-child {
+            border-bottom: none;
+        }
+
+        .label {
+            font-weight: 600;
+            color: #065F46;
+        }
+
+        .value {
+            color: #1F2937;
+            text-align: right;
+            max-width: 60%;
+        }
+
+        .footer {
+            background-color: #fafafa;
+            text-align: center;
+            padding: 18px;
+            font-size: 13px;
+            color: #9CA3AF;
+        }
+
+        @media screen and (max-width: 600px) {
+            .item {
+                flex-direction: column;
+                gap: 4px;
+            }
+            .value {
+                text-align: left;
+                max-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+
+        <div class="header">
+            <h1>New Reservation Created</h1>
+        </div>
+
+        <div class="content">
+            <div class="intro">
+                <p>Hello,</p>
+                <p>A new reservation has been successfully created.</p>
+            </div>
+
+            <div class="card">
+                <div class="item">
+                    <span class="label">Client Name : </span>
+                    <span class="value">{{clientName}}</span>
+                </div>
+
+                <div class="item">
+                    <span class="label">Place : </span>
+                    <span class="value">{{placeName}}</span>
+                </div>
+
+                <div class="item">
+                    <span class="label">Reservation Start Date : </span>
+                    <span class="value">{{reservationStart}}</span>
+                </div>
+
+                <div class="item">
+                    <span class="label">Reservation End Date : </span>
+                    <span class="value">{{reservationEnd}}</span>
+                </div>
+
+            
+                <div class="item">
+                    <span class="label">Start Hour : </span>
+                    <span class="value">{{startHour}}</span>
+                </div>
+
+                <div class="item">
+                    <span class="label">End Hour : </span>
+                    <span class="value">{{endHour}}</span>
+                </div>
+
+             
+               
+            </div>
+        </div>
+
+        <div class="footer">
+            © 2025 Your Platform. All rights reserved.
+        </div>
+
+    </div>
+
+</body>
+</html>

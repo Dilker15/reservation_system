@@ -14,14 +14,18 @@ import { StripeWebHookController } from './stripe.webhook.controller';
 import { MercadoPagoWebHookController } from './mp.webhook.controller';
 import { MercadoPagoWeebHookService } from './services/mp.webhook.service';
 import { StripeWebhookService } from './services/stripe.webhook.service';
+import { ParserNotificationData } from 'src/common/helpers/parserNotificationData';
+import { QueueBullModule } from 'src/queue-bull/queue-bull.module';
 
 @Module({
   imports:[ConfigModule,
-           TypeOrmModule.forFeature([PaymentIntent,Reservation])
+           TypeOrmModule.forFeature([PaymentIntent,Reservation]),
+           QueueBullModule,
   ],
   controllers: [PaymentMpController,StripeWebHookController,MercadoPagoWebHookController],
   providers: [PaymentService,mpConfigProvider,PreferencesMp,MercadoPagoStrategy,StripeStrategy,PaymentStrategyFactory,MercadoPagoWeebHookService,
-              StripeWebhookService
+              StripeWebhookService,
+              ParserNotificationData,
   ],
 })
 export class PaymentMpModule {}
