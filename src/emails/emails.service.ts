@@ -30,7 +30,6 @@ export class EmailsService {
         const regex = new RegExp(`{{${key}}}`, 'g');
         template = template.replace(regex, value);
       }
-
       await this.transporter.sendMail({
         from: `"Pro - Reservation" <${process.env.MAIL_USER}>`,
         to,
@@ -38,7 +37,7 @@ export class EmailsService {
         html: template,
       });
     } catch (error) {
-      //console.error('Error sending email:', error);
+      //console.log(error);
       this.logger.error("Email sending error to email : "+ to,error.trace);
       throw new InternalServerErrorException(`Email was not sent to: ${to}`);
     }
