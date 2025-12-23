@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reservation Confirmed</title>
+    <style>
+        body {
+            font-family: 'Helvetica', Arial, sans-serif;
+            background-color: #f4f4f7;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 40px auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .header {
+            text-align: center;
+            background-color: #00AA6C; /* TripAdvisor green */
+            color: #ffffff;
+            padding: 20px 0;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .content {
+            padding: 30px 20px;
+        }
+        .text {
+            font-size: 16px;
+            color: #004F32; /* dark green text */
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        .card {
+            background-color: #F2FBF7; /* soft green background */
+            border-radius: 6px;
+            padding: 20px;
+            margin-top: 20px;
+            border: 1px solid #DDF3EA;
+        }
+        .item {
+            font-size: 16px;
+            color: #333333;
+            margin-bottom: 10px;
+        }
+        .item strong {
+            color: #00AA6C;
+        }
+        .footer {
+            text-align: center;
+            font-size: 14px;
+            color: #7a7a7a;
+            padding: 20px;
+        }
+        @media screen and (max-width: 600px) {
+            .container {
+                margin: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            Reservation Confirmed
+        </div>
+
+        <div class="content">
+            <p class="text">
+                Hello <strong>{{clientName}}</strong>,
+            </p>
+
+            <p class="text">
+                We’re happy to let you know that your reservation has been successfully confirmed.
+            </p>
+
+            <div class="card">
+                <p class="item">
+                    <strong>Place:</strong> {{placeName}}
+                </p>
+
+                <p class="item">
+                    <strong>Reservation Start Date:</strong> {{reservationStart}}
+                </p>
+
+                <p class="item">
+                    <strong>Start Hour:</strong> {{startHour}}
+                </p>
+
+                <p class="item">
+                    <strong>End Hour:</strong> {{endHour}}
+                </p>
+
+                <p class="item">
+                    <strong>Reservation End Date:</strong> {{reservationEnd}}
+                </p>
+            </div>
+
+            <p class="text" style="margin-top: 25px;">
+                If you have any questions or need to make changes, feel free to contact us.
+            </p>
+
+            <p class="text">
+                Thank you for choosing us!
+            </p>
+        </div>
+
+        <div class="footer">
+            &copy; 2025 Your Platform. All rights reserved.
+        </div>
+    </div>
+</body>
+</html>

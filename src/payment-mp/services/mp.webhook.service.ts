@@ -1,11 +1,12 @@
-import { BadRequestException, Injectable } from "@nestjs/common";
+import {Injectable } from "@nestjs/common";
 import { IWebhook } from "../interfaces/WebHookStrategy";
-import { WebhookEventParse } from "../interfaces/create.payment";
 import { PaymentStrategyFactory } from "../strategies/PaymentStrategyFactory";
-import { PAYMENTS_STATUS, PROVIDERS } from "src/common/Interfaces";
+import { EMAIL_TYPE, PAYMENTS_STATUS, PROVIDERS } from "src/common/Interfaces";
 import { InjectRepository } from "@nestjs/typeorm";
 import { PaymentIntent } from "../entities/payments.entity";
 import { DataSource, In, Not, Repository } from "typeorm";
+import { ParserNotificationData } from "src/common/helpers/parserNotificationData";
+import { EnqueueMailServices } from "src/queue-bull/enqueue-mail-services";
 
 
 
@@ -15,6 +16,8 @@ export class MercadoPagoWeebHookService implements IWebhook{
     constructor(private readonly paymentStrategyFactory:PaymentStrategyFactory,
                 @InjectRepository(PaymentIntent) private readonly paymentIntenRepo:Repository<PaymentIntent>,
                 private readonly dataSource:DataSource,
+                private readonly parserData:ParserNotificationData,
+                private readonly enqueNotifications:EnqueueMailServices,
               ){
                 
     }
@@ -114,6 +117,15 @@ export class MercadoPagoWeebHookService implements IWebhook{
             status: In([PAYMENTS_STATUS.CREATED]),
             reservation: { id: reservationId[0]},
           },
+          relations:{
+            reservation:{
+                place:{
+                    owner:true,
+                    booking_mode:true,
+                },
+                user:true,
+            }
+          }
         });
 
         if (!paymentFound) {
@@ -135,17 +147,27 @@ export class MercadoPagoWeebHookService implements IWebhook{
       });
     }
 
+
     private async enqueueNotification(paymentSaved: PaymentIntent) {
       try {
-      
-        console.log(`Notification queued successfully for payment: ${paymentSaved.payment_id}`);
+          const owner = paymentSaved.reservation.place.owner;
+          const reservation = paymentSaved.reservation;
+          const client = paymentSaved.reservation.user;
+          const place = paymentSaved.reservation.place;
+
+          const dataNotification = this.parserData.parserNotificationConfirm(client,reservation,place);
+          
+         
+          Promise.all([this.enqueNotifications.enqueEmail(EMAIL_TYPE.ADMIN_CONFIRM,{data:dataNotification,to:owner.email,notification_type:EMAIL_TYPE.ADMIN_CONFIRM}),
+                      this.enqueNotifications.enqueEmail(EMAIL_TYPE.RESERVATION_CONFIRM,{data:dataNotification,to:owner.email,notification_type:EMAIL_TYPE.RESERVATION_CONFIRM})])
+          console.log(`Notification queued successfully for payment: ADMIN - CLIENT ${paymentSaved.payment_id}`);
       } catch (queueError: any) {
-        console.error(
-          `QUEUE_ENQUEUE_FAILED: Could not enqueue notification for payment ${paymentSaved.payment_id}. ` +
-          `Payment is saved in DB (ID: ${paymentSaved.id}). ` +
-          `Error: ${queueError.message}`,
-          queueError.stack
-        );
+          console.error(
+            `QUEUE_ENQUEUE_FAILED: Could not enqueue notification for payment ${paymentSaved.payment_id}. ` +
+            `Payment is saved in DB (ID: ${paymentSaved.id}). ` +
+            `Error: ${queueError.message}`,
+            queueError.stack
+          );
       }
     }
 
