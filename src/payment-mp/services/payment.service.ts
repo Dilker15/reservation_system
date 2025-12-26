@@ -31,12 +31,21 @@ export class PaymentService {
        
         const reservation = await this.reservationRepo.findOne({
             where: { id: reservationId, status: RESERVATION_STATUS.CREATED },
-            relations: ['place']
+            relations: {
+                place:{
+                    owner:{
+                        payment_accounts:true
+                    }
+                }
+            }
         });
-    
+
         if (!reservation) {
            
             throw new NotFoundException("Reservation not found or payment already initiated/completed");
+        }
+        if(reservation.place.owner.payment_accounts?.length === 0){
+            throw new NotFoundException("Payment method not found for this place");
         }
         
       
