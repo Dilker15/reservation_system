@@ -67,3 +67,14 @@ export enum PROVIDERS {
   MP = 'MERCADO_PAGO',
   STRIPE = 'STRIPE',
 }
+
+
+
+export enum PAYMENT_ACCOUNTS_STATUS {
+
+  ACTIVE = 'ACTIVE',
+  INACTIVE = 'INACTIVE',
+  CANCELLED = 'CANCELLED',
+
+
+}

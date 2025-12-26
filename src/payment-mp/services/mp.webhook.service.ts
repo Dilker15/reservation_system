@@ -1,12 +1,13 @@
-import {Injectable } from "@nestjs/common";
+import {Injectable, InternalServerErrorException } from "@nestjs/common";
 import { IWebhook } from "../interfaces/WebHookStrategy";
 import { PaymentStrategyFactory } from "../strategies/PaymentStrategyFactory";
-import { EMAIL_TYPE, PAYMENTS_STATUS, PROVIDERS } from "src/common/Interfaces";
+import { EMAIL_TYPE, PAYMENTS_STATUS, PROVIDERS, RESERVATION_STATUS } from "src/common/Interfaces";
 import { InjectRepository } from "@nestjs/typeorm";
 import { PaymentIntent } from "../entities/payments.entity";
 import { DataSource, In, Not, Repository } from "typeorm";
 import { ParserNotificationData } from "src/common/helpers/parserNotificationData";
 import { EnqueueMailServices } from "src/queue-bull/enqueue-mail-services";
+import { Reservation } from "src/reservation/entities/reservation.entity";
 
 
 
@@ -128,6 +129,14 @@ export class MercadoPagoWeebHookService implements IWebhook{
           }
         });
 
+        const reservationFound = await manager.findOne(Reservation,{
+           where:{
+            id:reservationId[0],
+           }
+        });
+        if(!reservationFound){
+           throw new InternalServerErrorException('Reservation not found to process');
+        }
         if (!paymentFound) {
           console.log(
             `Payment found in MP but no corresponding reservation in DB or already PAID: ${paymentCurrent.paymentId}`
@@ -142,7 +151,8 @@ export class MercadoPagoWeebHookService implements IWebhook{
         paymentFound.payment_id = paymentCurrent.paymentId;
         paymentFound.payment_type = paymentCurrent.paymentMethod ?? 'n/a';
         paymentFound.status = PAYMENTS_STATUS.PAID;
-
+        reservationFound.status = RESERVATION_STATUS.PAID;
+        await manager.save(Reservation,reservationFound);
         return await manager.save(PaymentIntent, paymentFound);
       });
     }

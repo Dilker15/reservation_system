@@ -26,7 +26,10 @@ export class MercadoPagoStrategy implements PaymentProvider{
 
     async createPayment(data: CreatePaymentData): Promise<PreferenceResponse> {
      try{
-        
+        const totalAmount = data.items.reduce(
+            (total, item) => total + item.unit_price * item.quantity,
+            0
+          );
         const responseMp = await this.preferences.create({
             body: {
                 items:data.items,
@@ -37,6 +40,9 @@ export class MercadoPagoStrategy implements PaymentProvider{
                 },
                 back_urls:data.back_urls,
                 external_reference:data.intent_id,
+               // marketplace_fee:totalAmount * 0.1   // IT HAVE TO BE CHANGED IN THE FUTURE FOR WEB MASTER IN A DASHBOARD.
+
+            
             },
 
         });
@@ -51,12 +57,13 @@ export class MercadoPagoStrategy implements PaymentProvider{
 
 
 
-    async verifyPayment(payload: any): Promise<VerifyPaymentResult | null> {
+    async verifyPayment(payload: any): Promise<VerifyPaymentResult | null> { // TODO : manage differents payment status :failed,refused ,etc.
         const currentPayment: PaymentResponse = await this.payment.get({ id: payload });
 
         if (currentPayment.status !== 'approved') {
             return null;
         }
+        // FUTURE : HERE MANAGE PAYMENTS STATUS ..
 
         return this.buildPaymentResult(currentPayment);
     }

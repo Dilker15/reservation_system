@@ -17,6 +17,8 @@ import { LocationsModule } from './locations/locations.module';
 import { OpeningHoursModule } from './opening-hours/opening-hours.module';
 import { ReservationModule } from './reservation/reservation.module';
 import { PaymentMpModule } from './payment-mp/payment-mp.module';
+import { PaymentAccountsModule } from './payment_accounts/payment_accounts.module';
+import { TokenEncrytionModule } from './token-encrytion/token-encrytion.module';
 
 
 @Module({
@@ -63,6 +65,8 @@ import { PaymentMpModule } from './payment-mp/payment-mp.module';
     OpeningHoursModule,
     ReservationModule,
     PaymentMpModule,
+    PaymentAccountsModule,
+    TokenEncrytionModule,
 
   ],
   controllers: [AppController],

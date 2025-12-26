@@ -9,7 +9,7 @@ export const mpConfigProvider = {
   inject: [ConfigService],
   useFactory: (configService: ConfigService) => {
     return new MercadoPagoConfig({
-      accessToken: configService.getOrThrow('MERCADO_PAGO_TOKEN'),
+      accessToken: configService.getOrThrow('MERCADO_PAGO_TOKEN'),// it should be changed for seller_token MARKET_PLACE MODE.
       options: { timeout: 5000 },
     });
   },
