@@ -1,4 +1,5 @@
 import { Roles } from "src/common/Interfaces";
+import { PaymentAccount } from "src/payment_accounts/entities/payment_account.entity";
 import { Place } from "src/places/entities/place.entity";
 import { Reservation } from "src/reservation/entities/reservation.entity";
 import { Column, CreateDateColumn, Entity, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
@@ -49,6 +50,10 @@ export class User {
 
     @OneToMany(()=>Place,(place)=>place.owner)
     places?:Place[];
+
+
+    @OneToMany(()=>PaymentAccount,(p)=>p.admin)
+    payment_accounts?:PaymentAccount [];
 
 
     @CreateDateColumn({ type: 'timestamp' })

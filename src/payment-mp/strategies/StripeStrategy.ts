@@ -8,7 +8,7 @@ import { PreferenceResponse } from "mercadopago/dist/clients/preference/commonTy
 
 
 
-export class StripeStrategy implements PaymentProvider{     // TODO : 
+export class StripeStrategy implements PaymentProvider{     // TODO 
 
 
     async createPayment(data: CreatePaymentData): Promise<PreferenceResponse> {
