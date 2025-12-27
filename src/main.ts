@@ -9,11 +9,19 @@ import { seedCategory } from './shared/seeders/category.seeder';
 import { DataSource } from 'typeorm';
 import { seedBookingMode } from './shared/seeders/booking-mode.seeder';
 import { AppLoggerService } from './logger/logger.service';
+import * as bodyParser from 'body-parser';
+
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule,{
     bufferLogs:true,
   });
+  
+  app.use(
+    '/api/v1/reservations/webhook/STRIPE',
+    bodyParser.raw({ type: 'application/json' }),
+  );
+
   const reflector = app.get(Reflector);
   app.setGlobalPrefix('/api/v1/reservations');
   app.useGlobalPipes(new ValidationPipe({

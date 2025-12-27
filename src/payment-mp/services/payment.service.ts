@@ -18,6 +18,7 @@ import { PaymentIntent } from "../entities/payments.entity";
 @Injectable()
 export class PaymentService {
     
+    private urlWebhook = '/api/v1/reservations/webhook'
 
     constructor(
         private readonly paymentFactory: PaymentStrategyFactory,
@@ -41,15 +42,15 @@ export class PaymentService {
         });
 
         if (!reservation) {
-           
             throw new NotFoundException("Reservation not found or payment already initiated/completed");
         }
+
         if(reservation.place.owner.payment_accounts?.length === 0){
             throw new NotFoundException("Payment method not found for this place");
         }
         
       
-        const intentId = uuidv4();
+        const intentId = this.generateIntentId();
         const paymentData = this.mapReservationToPaymentData(reservation, provider, intentId);
         
         try {
@@ -60,17 +61,16 @@ export class PaymentService {
           
             await this.paymentIntentRepo.save({
                 external_reference: preference.external_reference,
-                preference_id: preference.id,
-                preference_link: preference.init_point,
+                preference_id: preference.preference_id,
+                preference_link: preference.url,
                 provider: provider,
                 reservation,
             });
 
             return {
-                intentPaymentId: preference.id!,
-                paymentLink: preference.init_point!,
+                payment_link: preference.url!,
                 provider: paymentData.provider,
-                raw: reservation.id,
+                reservation: reservation.id,
             };
 
         } catch (error) {
@@ -89,7 +89,7 @@ export class PaymentService {
             provider,
             reservationId: reservation.id,
             amount: totalAmount,
-            currency: 'ARS',         // TODO: make currency configurable by the webmaster in the future
+            currency: provider == PROVIDERS.MP? 'ARS' : 'USD',         // TODO: make currency configurable by the webmaster in the future
             
             items: [{
                 name: reservation.place.name,
@@ -103,23 +103,24 @@ export class PaymentService {
             metadata: {
                 reservationId: reservation.id,
             },
-            
             auto_return: "approved",
-            
             back_urls: {
                 failure: config('BACK_URL_FAILURE')!,
                 pending: config('BACK_URL_PENDING')!,
                 success: config('BACK_URL_SUCCESS')!,
             },
             intent_id: intentId,
-            notification_url: this.generateUrlNotification()
+            notification_url: this.generateUrlNotification(provider)
         };
     }
 
-    private generateUrlNotification():string{
-        const urlApp = this.configService.get<string>('APP_URL')! + '/api/v1/reservations/webhook/mercado-pago';
-        console.log("URL CLOUDFARE FOR WEBHOOK : ",urlApp)
+    private generateUrlNotification(provider:PROVIDERS):string{
+        const urlApp = this.configService.get<string>('APP_URL') + `${this.urlWebhook}/${provider}`;
         return urlApp;
+    }
+
+    private generateIntentId():string{
+        return uuidv4();
     }
 }
 

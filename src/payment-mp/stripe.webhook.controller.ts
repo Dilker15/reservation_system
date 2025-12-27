@@ -1,13 +1,13 @@
-import { Body, Controller, Post } from "@nestjs/common";
+import { BadRequestException, Body, Controller, HttpCode, Post, UseGuards } from "@nestjs/common";
 import { StripeWebhookService } from "./services/stripe.webhook.service";
 import { Public } from "src/auth/decorators/public.decorator";
+import { StripeWebhookGuard } from "src/auth/guards/stripe-webhook-guard";
 
 
 
 
-@Controller('webhook/stripe')
+@Controller('webhook/STRIPE')
 export class StripeWebHookController{
-
 
     constructor(private readonly stripeService:StripeWebhookService){
 
@@ -15,13 +15,15 @@ export class StripeWebHookController{
 
 
     @Public()
+    @UseGuards(StripeWebhookGuard) // VALIDATE STRIPE SIGNATURE 
     @Post()
     handleEvent(@Body() body: any) {
-        console.log("🔔 Pago confirmado por Mercado Pago:");
-        console.log(body);
-        return { status: 'ok' };
-    }
+      if (body.type === 'checkout.session.completed') {
 
+      }
+      
+      return {received:true};
+    }
 
 
 
