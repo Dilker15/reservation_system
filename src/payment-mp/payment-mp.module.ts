@@ -2,7 +2,6 @@ import { Module } from '@nestjs/common';
 import { PaymentMpController } from './payment-mp.controller';
 import { ConfigModule } from '@nestjs/config';
 import { mpConfigProvider } from './mp.config';
-import { PreferencesMp } from './services/preference.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { PaymentIntent } from './entities/payments.entity';
 import { MercadoPagoStrategy } from './strategies/MercadoPagoStrategy';
@@ -16,6 +15,7 @@ import { MercadoPagoWeebHookService } from './services/mp.webhook.service';
 import { StripeWebhookService } from './services/stripe.webhook.service';
 import { ParserNotificationData } from 'src/common/helpers/parserNotificationData';
 import { QueueBullModule } from 'src/queue-bull/queue-bull.module';
+import { stripeProvider } from './stripe.config';
 
 @Module({
   imports:[ConfigModule,
@@ -23,9 +23,10 @@ import { QueueBullModule } from 'src/queue-bull/queue-bull.module';
            QueueBullModule,
   ],
   controllers: [PaymentMpController,StripeWebHookController,MercadoPagoWebHookController],
-  providers: [PaymentService,mpConfigProvider,PreferencesMp,MercadoPagoStrategy,StripeStrategy,PaymentStrategyFactory,MercadoPagoWeebHookService,
-              StripeWebhookService,
+  providers: [PaymentService,mpConfigProvider,MercadoPagoStrategy,StripeStrategy,PaymentStrategyFactory,MercadoPagoWeebHookService,
+              StripeWebhookService,stripeProvider,
               ParserNotificationData,
   ],
+  exports:[stripeProvider],
 })
 export class PaymentMpModule {}

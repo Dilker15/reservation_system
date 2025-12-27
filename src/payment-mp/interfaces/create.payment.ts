@@ -36,12 +36,10 @@ export interface CreatePaymentData{
 
 
 
-  export interface CreatePaymentResponse{
-
-    intentPaymentId: string;      
-    paymentLink: string;
+  export interface CreatePaymentResponse{   
+    payment_link: string;
     provider: string;       
-    raw: any;      
+    reservation:string,    
 }
 
 
@@ -51,4 +49,11 @@ export interface WebhookEventParse {
   provider: PROVIDERS;
   data: any;
   timestamp: Date;
+}
+
+
+export interface CreatePreferenceRespone {
+  external_reference?:string;
+  url:string,
+  preference_id:string;
 }

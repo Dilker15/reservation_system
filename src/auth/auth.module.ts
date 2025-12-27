@@ -11,6 +11,7 @@ import { PassportModule } from '@nestjs/passport';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtStrategy } from './strategies/JwtStrategy';
 import { AppLoggerModule } from 'src/logger/logger.module';
+import { PaymentMpModule } from 'src/payment-mp/payment-mp.module';
 
 
 @Module({
@@ -31,7 +32,8 @@ import { AppLoggerModule } from 'src/logger/logger.module';
           expiresIn:config.get<string>('EXPIRATION_TOKEN') as any,
         }
       }),
-    })
+    }),
+    PaymentMpModule,
   ],
   exports:[PassportModule]
 })

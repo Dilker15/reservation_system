@@ -1,5 +1,5 @@
 import { BadRequestException, Inject, Injectable, InternalServerErrorException, NotImplementedException } from "@nestjs/common";
-import { CreatePaymentData, CreatePaymentResponse } from "../interfaces/create.payment";
+import { CreatePaymentData, CreatePaymentResponse, CreatePreferenceRespone } from "../interfaces/create.payment";
 import { VerifyPaymentResult } from "../interfaces/verify.payment";
 import { PaymentProvider } from "../interfaces/PaymentProvider";
 import { MercadoPagoConfig, Preference, Payment } from 'mercadopago';
@@ -22,9 +22,10 @@ export class MercadoPagoStrategy implements PaymentProvider{
             this.preferences = new Preference(config);
             this.payment = new Payment(config);
     }
+
     
 
-    async createPayment(data: CreatePaymentData): Promise<PreferenceResponse> {
+    async createPayment(data: CreatePaymentData): Promise<CreatePreferenceRespone> {
      try{
         const totalAmount = data.items.reduce(
             (total, item) => total + item.unit_price * item.quantity,
@@ -41,13 +42,10 @@ export class MercadoPagoStrategy implements PaymentProvider{
                 back_urls:data.back_urls,
                 external_reference:data.intent_id,
                // marketplace_fee:totalAmount * 0.1   // IT HAVE TO BE CHANGED IN THE FUTURE FOR WEB MASTER IN A DASHBOARD.
-
-            
             },
 
         });
-    
-    return responseMp;
+     return this.transformPreferenceResponse(responseMp);
      }catch(error){
         console.log(error);
         throw new InternalServerErrorException("Unexpected error MP payment");
@@ -59,12 +57,10 @@ export class MercadoPagoStrategy implements PaymentProvider{
 
     async verifyPayment(payload: any): Promise<VerifyPaymentResult | null> { // TODO : manage differents payment status :failed,refused ,etc.
         const currentPayment: PaymentResponse = await this.payment.get({ id: payload });
-
+        console.log(currentPayment);
         if (currentPayment.status !== 'approved') {
             return null;
         }
-        // FUTURE : HERE MANAGE PAYMENTS STATUS ..
-
         return this.buildPaymentResult(currentPayment);
     }
 
@@ -79,10 +75,20 @@ export class MercadoPagoStrategy implements PaymentProvider{
             payerName:data.payer?.first_name,
             amount:data.transaction_amount,
             reservationId:data.metadata,
-            paymentMethod:data.payment_method_id,
+            paymentMethod:data.payment_type_id,
             external_reference:data.external_reference!,
             payerId:data.payer?.id,
         }
+    }
+
+
+
+    transformPreferenceResponse(preferenceData: any): CreatePreferenceRespone {
+        return {
+            external_reference:preferenceData.external_reference!,
+            url:preferenceData.init_point!,
+            preference_id:preferenceData.id!,
+         }
     }
 
 }
