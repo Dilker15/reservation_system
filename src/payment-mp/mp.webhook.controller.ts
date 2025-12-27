@@ -5,7 +5,7 @@ import { MercadoPagoWebhookGuard } from "src/auth/guards/mercado-pago-webhook-gu
 
 
 
-@Controller('webhook/mercado-pago')
+@Controller('webhook/MERCADO_PAGO')
 export class MercadoPagoWebHookController{
 
     constructor(private readonly mercadoService:MercadoPagoWeebHookService){
@@ -16,7 +16,7 @@ export class MercadoPagoWebHookController{
         @Public() 
         @Post()
         @HttpCode(200)
-        @UseGuards(MercadoPagoWebhookGuard)
+        @UseGuards(MercadoPagoWebhookGuard) // VALIDATE MP SIGNATURE
         async handleEvent(@Body() body: any) {
             try {
              await this.mercadoService.processEvent(body);
