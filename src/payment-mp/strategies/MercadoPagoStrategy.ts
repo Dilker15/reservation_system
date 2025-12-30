@@ -55,10 +55,9 @@ export class MercadoPagoStrategy implements PaymentProvider{
 
 
 
-    async verifyPayment(payload: any): Promise<VerifyPaymentResult | null> { // TODO : manage differents payment status :failed,refused ,etc.
-        const currentPayment: PaymentResponse = await this.payment.get({ id: payload });
-        console.log(currentPayment);
-        if (currentPayment.status !== 'approved') {
+    async verifyPayment(paymentId:string): Promise<VerifyPaymentResult | null> { // TODO : manage differents payment status :failed,refused ,etc.
+        const currentPayment: PaymentResponse = await this.payment.get({ id: paymentId });
+        if (!currentPayment || currentPayment.status !== 'approved') {
             return null;
         }
         return this.buildPaymentResult(currentPayment);
@@ -78,6 +77,7 @@ export class MercadoPagoStrategy implements PaymentProvider{
             paymentMethod:data.payment_type_id,
             external_reference:data.external_reference!,
             payerId:data.payer?.id,
+            currency:data.currency_id!,
         }
     }
 

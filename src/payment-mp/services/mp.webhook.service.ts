@@ -8,6 +8,7 @@ import { DataSource, In, Not, Repository } from "typeorm";
 import { ParserNotificationData } from "src/common/helpers/parserNotificationData";
 import { EnqueueMailServices } from "src/queue-bull/enqueue-mail-services";
 import { Reservation } from "src/reservation/entities/reservation.entity";
+import { VerifyPaymentResult } from "../interfaces/verify.payment";
 
 
 
@@ -110,7 +111,7 @@ export class MercadoPagoWeebHookService implements IWebhook{
       return reservationId;
     }
 
-    private async processPaymentTransaction(paymentCurrent: any, reservationId: string) {
+    private async processPaymentTransaction(paymentCurrent:VerifyPaymentResult, reservationId: string) {
       return await this.dataSource.transaction(async (manager) => {
         const paymentFound = await manager.findOne(PaymentIntent, {
           where: {
@@ -147,9 +148,9 @@ export class MercadoPagoWeebHookService implements IWebhook{
         paymentFound.payer_email = paymentCurrent.payerEmail ?? 'n/a';
         paymentFound.payer_id = paymentCurrent.payerId ?? 'n/a';
         paymentFound.amount = paymentCurrent.amount?.toString() ?? '0';
-        paymentFound.payer_name = paymentCurrent.payerName ?? 'n/a';
         paymentFound.payment_id = paymentCurrent.paymentId;
         paymentFound.payment_type = paymentCurrent.paymentMethod ?? 'n/a';
+        paymentFound.currency = paymentCurrent.currency;
         paymentFound.status = PAYMENTS_STATUS.PAID;
         reservationFound.status = RESERVATION_STATUS.PAID;
         await manager.save(Reservation,reservationFound);

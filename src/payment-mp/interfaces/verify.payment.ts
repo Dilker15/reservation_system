@@ -16,5 +16,7 @@ export interface VerifyPaymentResult {
     paymentMethod?: string,
     external_reference:string,
     payerId?:string,
+    currency:string,
+    
   }
   
