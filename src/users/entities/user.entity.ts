@@ -1,8 +1,9 @@
 import { Roles } from "src/common/Interfaces";
+import { OAuthStates } from "src/payment_accounts/entities/oauth_states.entity";
 import { PaymentAccount } from "src/payment_accounts/entities/payment_account.entity";
 import { Place } from "src/places/entities/place.entity";
 import { Reservation } from "src/reservation/entities/reservation.entity";
-import { Column, CreateDateColumn, Entity, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, OneToMany, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 
 @Entity({name:'users'})
 export class User {
@@ -55,6 +56,9 @@ export class User {
     @OneToMany(()=>PaymentAccount,(p)=>p.admin)
     payment_accounts?:PaymentAccount [];
 
+
+    @OneToOne(() => OAuthStates, (state) => state.admin)
+    authorization_intent: OAuthStates;
 
     @CreateDateColumn({ type: 'timestamp' })
     created_at: Date;

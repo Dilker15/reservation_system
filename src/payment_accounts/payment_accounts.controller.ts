@@ -1,10 +1,11 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, ParseEnumPipe, Res, Redirect } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, ParseEnumPipe, Res, Redirect, Query, BadRequestException } from '@nestjs/common';
 import { PaymentAccountsService } from './payment_accounts.service';
 import { CreatePaymentAccountDto } from './dto/create-payment_account.dto';
 import { GetUser } from 'src/auth/decorators/getUser.decorator';
 import { User } from 'src/users/entities/user.entity';
 import { PROVIDERS, Roles } from 'src/common/Interfaces';
 import { Role } from 'src/auth/decorators/role.decorator';
+import { Public } from 'src/auth/decorators/public.decorator';
 
 
 @Controller('payment-accounts')
@@ -29,18 +30,31 @@ export class PaymentAccountsController {
     
 
 
-    @Post('callback/mercado-pago')
+    @Public()
+    @Get('callback/MERCADO_PAGO')
     callbackMP(){
-       // THIS IS SIMULATED IN ROUTE / oauth/provider/connect.
+      
     }
 
 
+    @Public()
+    @Get('callback/STRIPE')
+    async callbackStripe(@Query('code') code?: string,@Query('state') state?: string,@Query('error') error?: string){
+      if (error) {
+        throw new BadRequestException('Stripe authorization failed');
+      }
 
-    @Post('callback/stripe')
-    callbackStripe(){
+      if (!code || !state) {
+        throw new BadRequestException('Missing code or state');
+      }
 
+      await this.paymentAccountsService.exchangeCodeForToken(state,PROVIDERS.STRIPE,code);
+
+      return {
+        success: true,
+        message: 'Stripe account connected successfully',
+      };
     }
-
 
 
 

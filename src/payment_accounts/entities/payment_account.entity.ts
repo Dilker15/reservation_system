@@ -55,10 +55,6 @@ import {
       @Index()
       status: PAYMENT_ACCOUNTS_STATUS
     
-  
-      @Column({name: 'default_currency',type: 'varchar',length: 3,default: 'ARS',})
-      default_currency: string;
-    
     
       @Column({ type: 'jsonb', nullable: true })
       metadata?: Record<string, any>;
