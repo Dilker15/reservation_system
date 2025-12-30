@@ -78,3 +78,6 @@ export enum PAYMENT_ACCOUNTS_STATUS {
 
 
 }
+
+
+export const VERSION_APP_URL= 'api/v1/reservations';

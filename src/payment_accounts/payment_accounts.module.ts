@@ -9,14 +9,16 @@ import { StripeOAuthStrategy } from './strategies/Stripe0AuthStrategy';
 import { MercadoPagoOAuthStrategy } from './strategies/Mp0AuthStrategy';
 import { ConfigModule } from '@nestjs/config';
 import { TokenEncrytionModule } from 'src/token-encrytion/token-encrytion.module';
+import { OAuthStates } from './entities/oauth_states.entity';
+import { StatesService } from './strategies/states.service';
 
 @Module({
   imports:[
-    TypeOrmModule.forFeature([PaymentAccount]),
+    TypeOrmModule.forFeature([PaymentAccount,OAuthStates]),
     ConfigModule,
     TokenEncrytionModule,
   ],
   controllers: [PaymentAccountsController],
-  providers: [PaymentAccountsService,OAuthFactory,MercadoPagoOAuthStrategy,StripeOAuthStrategy],
+  providers: [PaymentAccountsService,OAuthFactory,MercadoPagoOAuthStrategy,StripeOAuthStrategy,StatesService],
 })
 export class PaymentAccountsModule {}
