@@ -16,6 +16,7 @@ export class StripeWebhookGuard implements CanActivate{
      canActivate(context: ExecutionContext): boolean | Promise<boolean> | Observable<boolean> {
         const req = context.switchToHttp().getRequest();
         const body = req.body;
+        const rawBo = req.rawBody;
         const signature = req.headers['stripe-signature'];
         const webhookSecret = this.confServ.get<string>('STRIPE_WEBHOOK_SECRET');
 
@@ -27,6 +28,7 @@ export class StripeWebhookGuard implements CanActivate{
         } 
         try{
             const event = this.stripe.webhooks.constructEvent(body,signature,webhookSecret);
+            req.stripeEvent=event;
             return true;
         }catch(error){
             console.log(error);

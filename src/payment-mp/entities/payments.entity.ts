@@ -32,11 +32,6 @@ export class PaymentIntent{
     payer_id:string;
 
 
-    @Column({name:'payer_name', type:'varchar' , length:64,nullable:true})
-    payer_name:string;
-
-
-
     @Column({name:'payer_email', type:'varchar',nullable:true})
     payer_email:string;
 
@@ -62,6 +57,10 @@ export class PaymentIntent{
 
     @Column({name: 'amount',type: 'decimal',precision: 10,scale: 2,default: '0.00'})
     amount: string;
+
+
+    @Column({name:'currency', type:'varchar' ,length:3, nullable:true})
+    currency:string;
 
 
     @Column({ name: 'fee_amount', type: 'decimal', precision: 10, scale: 2, default: '0.00' })
