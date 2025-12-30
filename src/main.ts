@@ -17,11 +17,9 @@ async function bootstrap() {
     bufferLogs:true,
   });
   
-  app.use(
-    '/api/v1/reservations/webhook/STRIPE',
-    bodyParser.raw({ type: 'application/json' }),
-  );
 
+  
+  app.use('/api/v1/reservations/webhook/STRIPE',bodyParser.raw({ type: 'application/json' }));
   const reflector = app.get(Reflector);
   app.setGlobalPrefix('/api/v1/reservations');
   app.useGlobalPipes(new ValidationPipe({

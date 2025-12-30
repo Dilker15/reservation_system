@@ -6,6 +6,7 @@ import { PreferenceResponse } from "mercadopago/dist/clients/preference/commonTy
 import { ConfigService } from "@nestjs/config";
 import Stripe from "stripe";
 import { STRIPE_CLIENT } from "../stripe.config";
+import { PROVIDERS } from "src/common/Interfaces";
 
 
 
@@ -39,6 +40,12 @@ export class StripeStrategy implements PaymentProvider{     // TODO
                   reservation_id:data.reservationId,
 
                 },
+                payment_intent_data:{
+                  metadata:{
+                    external_id:data.intent_id,
+                    reservation_id:data.reservationId,
+                  }
+                },
             
                 success_url: data.back_urls.success,
                 cancel_url: data.back_urls.failure
@@ -52,8 +59,13 @@ export class StripeStrategy implements PaymentProvider{     // TODO
 
 
     
-    verifyPayment(payload: any): Promise<VerifyPaymentResult> {
-        throw new NotImplementedException("Method not implemented");
+    async verifyPayment(paymentId:string): Promise<VerifyPaymentResult | null > {
+        const payment = await this.stripe.paymentIntents.retrieve(paymentId);
+        
+        if(!payment || payment.status !== 'succeeded'){
+          return null;
+        }
+        return this.buildPaymentResult(payment);
     }
 
 
@@ -70,6 +82,21 @@ export class StripeStrategy implements PaymentProvider{     // TODO
     arsToUsdCents(amountArs: number): number {
         const EXCHANGE_RATE = 1500;     // IT HAS TO BE CHANGED BY WEB MASTER or USE A DIFFERNTE WAY TO CONVERT MONEY NO HARDCODE
         return Math.round((amountArs / EXCHANGE_RATE) * 100);
+    }
+
+
+    private buildPaymentResult(payment:Stripe.PaymentIntent):VerifyPaymentResult{
+      const metadata = payment.metadata;
+      return {
+           external_reference:metadata.external_id,
+           paymentId:payment.id,
+           provider:PROVIDERS.STRIPE,
+           reservationId:metadata.reservation_id,
+           status:payment.status,
+           amount:(payment.amount/100),
+           paymentMethod:payment.payment_method_types[0],
+           currency:payment.currency,
+        }
     }
 
 

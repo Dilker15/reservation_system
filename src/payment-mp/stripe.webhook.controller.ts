@@ -1,7 +1,11 @@
-import { BadRequestException, Body, Controller, HttpCode, Post, UseGuards } from "@nestjs/common";
+import { BadRequestException, Body, Controller, HttpCode, Post, Req, UseGuards } from "@nestjs/common";
 import { StripeWebhookService } from "./services/stripe.webhook.service";
 import { Public } from "src/auth/decorators/public.decorator";
 import { StripeWebhookGuard } from "src/auth/guards/stripe-webhook-guard";
+import Stripe from "stripe";
+import { InjectRepository } from "@nestjs/typeorm";
+import { PaymentIntent } from "./entities/payments.entity";
+import { Repository } from "typeorm";
 
 
 
@@ -17,11 +21,9 @@ export class StripeWebHookController{
     @Public()
     @UseGuards(StripeWebhookGuard) // VALIDATE STRIPE SIGNATURE 
     @Post()
-    handleEvent(@Body() body: any) {
-      if (body.type === 'checkout.session.completed') {
-
-      }
-      
+    async handleEvent(@Req() req: Request & { stripeEvent: Stripe.Event }) {
+      const event = req.stripeEvent;
+      await this.stripeService.processEvent(event as Stripe.Event);
       return {received:true};
     }
 
