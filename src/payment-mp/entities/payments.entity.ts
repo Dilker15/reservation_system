@@ -6,12 +6,12 @@ import { Column, CreateDateColumn, Entity, Index, JoinColumn, ManyToOne, Primary
 
 
 @Entity({name:'payment_intents'})
+@Index('UQ_one_approved_payment_per_reservation',['reservation'],{unique: true,where: `"status" = 'PAID'`})
 export class PaymentIntent{
 
 
     @PrimaryGeneratedColumn('uuid')
     id:string;
-
 
     @Column({name:'provider' ,enum:PROVIDERS})
     provider:PROVIDERS;
@@ -51,7 +51,7 @@ export class PaymentIntent{
     external_reference: string;
     
 
-    @Column({name:'status' , type:'enum' , enum:PAYMENTS_STATUS,default:PAYMENTS_STATUS.CREATED})
+    @Column({name:'status' , type:'enum' , enum:PAYMENTS_STATUS,default:PAYMENTS_STATUS.PENDING})
     status:PAYMENTS_STATUS
 
 
