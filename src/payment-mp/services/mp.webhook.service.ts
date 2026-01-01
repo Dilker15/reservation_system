@@ -50,20 +50,19 @@ export class MercadoPagoWeebHookService implements IWebhook{
 
       if (!paymentId) return;
 
-      if (await this.isPaymentAlreadyProcessed(paymentId)) {
+      if (await this.isPaymentAlreadyProcessed(paymentId)) { // verify idempotency paymentId.
         console.log(`Payment already processed: ${paymentId}`);
         return;
       }
-
+      let paymentCurrent;
       try {
-        const paymentCurrent = await this.verifyPaymentWithProvider(paymentId);
+        paymentCurrent = await this.verifyPaymentWithProvider(paymentId);
         if (!paymentCurrent) {
           console.log(`Payment not approved or not found. Payment ID: ${paymentId}`);
           return;
         }
 
         const reservationId = this.getReservationId(paymentCurrent);
-
         const paymentSaved = await this.processPaymentTransaction(paymentCurrent, reservationId);
         if (!paymentSaved) return;
 
@@ -116,7 +115,7 @@ export class MercadoPagoWeebHookService implements IWebhook{
         const paymentFound = await manager.findOne(PaymentIntent, {
           where: {
             external_reference: paymentCurrent.external_reference,
-            status: In([PAYMENTS_STATUS.CREATED]),
+            status: In([PAYMENTS_STATUS.PENDING]),
             reservation: { id: reservationId[0]},
           },
           relations:{

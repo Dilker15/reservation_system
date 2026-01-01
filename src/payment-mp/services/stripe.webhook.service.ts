@@ -1,8 +1,6 @@
 import { Injectable, InternalServerErrorException } from "@nestjs/common";
-import { WebhookEventParse } from "../interfaces/create.payment";
 import { IWebhook } from "../interfaces/WebHookStrategy";
 import Stripe from "stripe";
-import e from "express";
 import { InjectRepository } from "@nestjs/typeorm";
 import { PaymentIntent } from "../entities/payments.entity";
 import { DataSource, In, Repository } from "typeorm";
@@ -75,7 +73,7 @@ export class StripeWebhookService implements IWebhook{
                 where:{
                     reservation:{id:currentPayment.reservationId},
                     external_reference:currentPayment.external_reference,
-                    status:In([PAYMENTS_STATUS.CREATED])
+                    status:In([PAYMENTS_STATUS.PENDING])
                 },
                     relations:{
                         reservation:{
@@ -88,7 +86,7 @@ export class StripeWebhookService implements IWebhook{
                 },
             });
             if(!paymentIntentFound){
-                console.log("PAYMENT NOT FOUND OR PAID");
+                console.log("PAYMENT NOT FOUND OR PAID.");
                 return null;
             }
             const reservationPayment = await manager.findOne(Reservation,{
