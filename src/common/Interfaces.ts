@@ -55,7 +55,7 @@ export enum RESERVATION_STATUS {
 
 
 export enum PAYMENTS_STATUS {
-  CREATED = "CREATED",             
+  PENDING = "PENDING",             
   PAID = "PAID",                    
   CANCELLED = "CANCELLED",
   UPDATED = "UPDATED"
