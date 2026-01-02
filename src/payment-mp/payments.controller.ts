@@ -17,9 +17,4 @@ export class PaymentMpController {
     return await this.paymentServices.createPayment(reservation,provider);
   }
 
-
-
-  
-
-
 }

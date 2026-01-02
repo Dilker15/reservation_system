@@ -58,5 +58,11 @@ export class ReservationService {
       throw new InternalServerErrorException('Internal server error while creating reservation.');
     }
   }
+
+
+  async reservationIsPaid(reservation_id:string):Promise<boolean>{
+      const reservation = await this.reservationRepo.findOneBy({id:reservation_id,status:RESERVATION_STATUS.PAID});
+      return !!reservation;
+  }
 }
 

@@ -10,5 +10,6 @@ import { BookingStrategyFactory } from './strategies/BookingStrategyFactory';
   imports:[TypeOrmModule.forFeature([Reservation]),PlacesModule],
   controllers: [ReservationController],
   providers: [ReservationService,BookingStrategyFactory],
+  exports:[ReservationService],
 })
 export class ReservationModule {}

@@ -1,9 +1,7 @@
 import { Inject, Injectable, InternalServerErrorException, NotImplementedException } from "@nestjs/common";
 import { CreatePaymentData, CreatePaymentResponse, CreatePreferenceRespone } from "../interfaces/create.payment";
-import { VerifyPaymentResult } from "../interfaces/verify.payment";
-import { PaymentProvider } from "../interfaces/PaymentProvider";
-import { PreferenceResponse } from "mercadopago/dist/clients/preference/commonTypes";
-import { ConfigService } from "@nestjs/config";
+import { VerifyPaymentResult } from "../interfaces/create.payment";
+import { IPaymentProvider } from "../interfaces/PaymentProvider";
 import Stripe from "stripe";
 import { STRIPE_CLIENT } from "../stripe.config";
 import { PROVIDERS } from "src/common/Interfaces";
@@ -11,13 +9,13 @@ import { PROVIDERS } from "src/common/Interfaces";
 
 
 
-export class StripeStrategy implements PaymentProvider{     // TODO 
-
+export class StripeStrategy implements IPaymentProvider{    
 
 
     constructor(@Inject(STRIPE_CLIENT) private readonly stripe: Stripe,){
         
     }
+ 
   
     async createPayment(data: CreatePaymentData): Promise<CreatePreferenceRespone> {
         try{  
@@ -69,6 +67,11 @@ export class StripeStrategy implements PaymentProvider{     // TODO
     }
 
 
+    refundPayment(paymentId: string): Promise<void> {
+      throw new Error("Method not implemented.");
+    }
+
+
     transformPreferenceResponse(preferenceData: any): CreatePreferenceRespone {
        return {
         preference_id:preferenceData.id,
@@ -77,10 +80,11 @@ export class StripeStrategy implements PaymentProvider{     // TODO
        }
     }
 
+    
 
 
-    arsToUsdCents(amountArs: number): number {
-        const EXCHANGE_RATE = 1500;     // IT HAS TO BE CHANGED BY WEB MASTER or USE A DIFFERNTE WAY TO CONVERT MONEY NO HARDCODE
+    private arsToUsdCents(amountArs: number): number {
+        const EXCHANGE_RATE = 1500;     // IT HAS TO BE CHANGED BY WEB MASTER IN A DASHBOARD or USE A DIFFERNTE WAY TO CONVERT MONEY, NO HARDCODE
         return Math.round((amountArs / EXCHANGE_RATE) * 100);
     }
 
