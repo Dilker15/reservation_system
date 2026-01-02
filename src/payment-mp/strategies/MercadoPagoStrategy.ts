@@ -1,10 +1,9 @@
-import { BadRequestException, Inject, Injectable, InternalServerErrorException, NotImplementedException } from "@nestjs/common";
-import { CreatePaymentData, CreatePaymentResponse, CreatePreferenceRespone } from "../interfaces/create.payment";
-import { VerifyPaymentResult } from "../interfaces/verify.payment";
-import { PaymentProvider } from "../interfaces/PaymentProvider";
+import {  Inject, InternalServerErrorException, NotImplementedException } from "@nestjs/common";
+import { CreatePaymentData, CreatePreferenceRespone } from "../interfaces/create.payment";
+import { VerifyPaymentResult } from "../interfaces/create.payment";
+import { IPaymentProvider } from "../interfaces/PaymentProvider";
 import { MercadoPagoConfig, Preference, Payment } from 'mercadopago';
 import { MP_CONFIG } from "../mp.config";
-import { PreferenceResponse } from "mercadopago/dist/clients/preference/commonTypes";
 import {PROVIDERS } from "src/common/Interfaces";
 import { PaymentResponse } from "mercadopago/dist/clients/payment/commonTypes";
 
@@ -12,7 +11,7 @@ import { PaymentResponse } from "mercadopago/dist/clients/payment/commonTypes";
 
 
 
-export class MercadoPagoStrategy implements PaymentProvider{
+export class MercadoPagoStrategy implements IPaymentProvider{
 
 
     private readonly preferences:Preference
@@ -22,7 +21,6 @@ export class MercadoPagoStrategy implements PaymentProvider{
             this.preferences = new Preference(config);
             this.payment = new Payment(config);
     }
-
     
 
     async createPayment(data: CreatePaymentData): Promise<CreatePreferenceRespone> {
@@ -55,12 +53,17 @@ export class MercadoPagoStrategy implements PaymentProvider{
 
 
 
-    async verifyPayment(paymentId:string): Promise<VerifyPaymentResult | null> { // TODO : manage differents payment status :failed,refused ,etc.
+    async verifyPayment(paymentId:string): Promise<VerifyPaymentResult | null> {
         const currentPayment: PaymentResponse = await this.payment.get({ id: paymentId });
         if (!currentPayment || currentPayment.status !== 'approved') {
             return null;
         }
         return this.buildPaymentResult(currentPayment);
+    }
+
+
+    refundPayment(paymentId: string): Promise<void> {
+        throw new Error("Method not implemented.");
     }
 
     
@@ -73,7 +76,7 @@ export class MercadoPagoStrategy implements PaymentProvider{
             payerEmail:data.payer?.email,
             payerName:data.payer?.first_name,
             amount:data.transaction_amount,
-            reservationId:data.metadata,
+            reservationId:data.metadata.reservation_id,
             paymentMethod:data.payment_type_id,
             external_reference:data.external_reference!,
             payerId:data.payer?.id,

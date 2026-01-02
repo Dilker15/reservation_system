@@ -57,3 +57,29 @@ export interface CreatePreferenceRespone {
   url:string,
   preference_id:string;
 }
+
+
+export interface PaymentEvent {
+  provider: PROVIDERS,
+  eventType: 'payment_succeeded' | 'payment_failed' | 'refund';
+  providerEventId: string;
+  paymentId: string;
+  payload: any;
+}
+
+
+export interface VerifyPaymentResult {
+
+  provider: PROVIDERS,
+  paymentId: string;
+  reservationId: string;
+  status: string
+  amount?: number;
+  payerEmail?: string;
+  payerName?: string;
+  paymentMethod?: string,
+  external_reference:string,
+  payerId?:string,
+  currency:string,
+  
+}
