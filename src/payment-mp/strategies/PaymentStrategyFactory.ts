@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable } from "@nestjs/common";
 import { PROVIDERS } from "src/common/Interfaces";
-import { PaymentProvider } from "../interfaces/PaymentProvider";
+import { IPaymentProvider } from "../interfaces/PaymentProvider";
 import { MercadoPagoStrategy } from "./MercadoPagoStrategy";
 import { StripeStrategy } from "./StripeStrategy";
 
@@ -19,7 +19,7 @@ export class PaymentStrategyFactory{
 
     
 
-    getStretegy(provider:PROVIDERS):PaymentProvider{
+    getStretegy(provider:PROVIDERS):IPaymentProvider{
         switch (provider){
             case PROVIDERS.MP :
                 return this.mpStrategy

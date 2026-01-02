@@ -1,15 +1,17 @@
 import { Body, Controller, Headers, HttpCode, HttpStatus, Post, Res, UseGuards } from "@nestjs/common";
-import { MercadoPagoWeebHookService } from "./services/mp.webhook.service";
+
 import { Public } from "src/auth/decorators/public.decorator";
 import { MercadoPagoWebhookGuard } from "src/auth/guards/mercado-pago-webhook-guards";
+import { MpEventAdapter } from "./adapters/mp.event.adater";
+import { WebHookService } from "./services/webhook.service";
 
 
 
 @Controller('webhook/MERCADO_PAGO')
 export class MercadoPagoWebHookController{
 
-    constructor(private readonly mercadoService:MercadoPagoWeebHookService){
-
+    constructor(private readonly webhookSevice:WebHookService){
+                
     }
 
    
@@ -18,8 +20,11 @@ export class MercadoPagoWebHookController{
         @HttpCode(200)
         @UseGuards(MercadoPagoWebhookGuard) // VALIDATE MP SIGNATURE
         async handleEvent(@Body() body: any) {
+            const event = MpEventAdapter.adapt(body);
             try {
-             await this.mercadoService.processEvent(body);
+              if(event){
+                await this.webhookSevice.processEvent(event);
+              }
             } catch (error) {
               console.error('Webhook mp processing error:', error);
             }   
