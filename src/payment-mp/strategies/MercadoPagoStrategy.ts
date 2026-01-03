@@ -6,6 +6,7 @@ import { MercadoPagoConfig, Preference, Payment } from 'mercadopago';
 import { MP_CONFIG } from "../mp.config";
 import {PROVIDERS } from "src/common/Interfaces";
 import { PaymentResponse } from "mercadopago/dist/clients/payment/commonTypes";
+import { PaymentAccount } from "src/payment_accounts/entities/payment_account.entity";
 
 
 
@@ -23,7 +24,7 @@ export class MercadoPagoStrategy implements IPaymentProvider{
     }
     
 
-    async createPayment(data: CreatePaymentData): Promise<CreatePreferenceRespone> {
+    async createPayment(data: CreatePaymentData,account:PaymentAccount): Promise<CreatePreferenceRespone> {
      try{
         const totalAmount = data.items.reduce(
             (total, item) => total + item.unit_price * item.quantity,
@@ -58,7 +59,7 @@ export class MercadoPagoStrategy implements IPaymentProvider{
         const currentPayment: PaymentResponse = await this.payment.get({ id: paymentId });
         if (!currentPayment || currentPayment.status !== 'approved') {
             return null;
-        }
+        } 
         return this.buildPaymentResult(currentPayment);
     }
 
@@ -82,6 +83,7 @@ export class MercadoPagoStrategy implements IPaymentProvider{
             external_reference:data.external_reference!,
             payerId:data.payer?.id,
             currency:data.currency_id!,
+            feeAmount:0,
         }
     }
 
