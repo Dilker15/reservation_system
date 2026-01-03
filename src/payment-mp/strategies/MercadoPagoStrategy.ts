@@ -43,6 +43,7 @@ export class MercadoPagoStrategy implements IPaymentProvider{
             },
 
         });
+
      return this.transformPreferenceResponse(responseMp);
      }catch(error){
         console.log(error);

@@ -4,74 +4,85 @@ import { OAuthStrategy } from './0AuthStrategy';
 import { OAuthTokenResponse } from "../intefaces/OAuth.interface";
 import { PROVIDERS, VERSION_APP_URL } from 'src/common/Interfaces';
 import axios from 'axios'
-import * as crypto from 'crypto';
+
 
 @Injectable()
 export class StripeOAuthStrategy implements OAuthStrategy {
+    private readonly AUTH_BASE_URL = 'https://connect.stripe.com/oauth';
+    private readonly FORM_HEADERS = {
+      'Content-Type': 'application/x-www-form-urlencoded',
+    };
 
-  private readonly STRIPE_AUTH_URL = 'https://connect.stripe.com/oauth';
+    constructor(
+      private readonly configService: ConfigService,
+    ) {}
 
-  constructor(private readonly configService: ConfigService) {}
 
+    generateAuthUrl(state: string): string {
+      const params = new URLSearchParams({
+        response_type: 'code',
+        client_id: this.clientId,
+        scope: 'read_write',
+        redirect_uri: this.callbackUrl,
+        state,
+      });
 
-  generateAuthUrl(state:string): string {
-    const clientId = this.configService.get<string>('STRIPE_CLIENT_ID');
-
-    if (!clientId) {
-      throw new InternalServerErrorException('STRIPE_CLIENT_ID not found');
+      return `${this.AUTH_BASE_URL}/authorize?${params.toString()}`;
     }
-    const params = new URLSearchParams({
-      response_type: 'code',
-      client_id: clientId,
-      scope: 'read_write',
-      redirect_uri: this.generateCallbackUrl(),
-      state,
-    });
-
-    return `${this.STRIPE_AUTH_URL}/authorize?${params.toString()}`;
-  }
-
 
     async exchangeCodeForToken(code: string): Promise<OAuthTokenResponse> {
-    try {
-      const params = new URLSearchParams({
-        client_secret: this.configService.get<string>('STRIPE_SECRET_KEY')!,
-        code,
-        grant_type: 'authorization_code',
-        client_id: this.configService.get<string>('STRIPE_CLIENT_ID')!,
-      });
-    
-      const { data } = await axios.post(this.STRIPE_AUTH_URL+'/token', params.toString(), {
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-      });
+      try {
+        const params = new URLSearchParams({
+          client_id: this.clientId,
+          client_secret: this.clientSecret,
+          grant_type: 'authorization_code',
+          code,
+        });
 
-      return {
-        access_token:data.access_token,
-        refresh_token:data.refresh_token,
-        providerAccountId:data.stripe_user_id,
-        type_token:data.token_type,
-        scope:data.scope,
-        isEnable:true,
+        const { data } = await axios.post(`${this.AUTH_BASE_URL}/token`,params.toString(),
+          { headers: this.FORM_HEADERS },
+        );
+
+        return {
+          access_token: data.access_token,
+          refresh_token: data.refresh_token,
+          providerAccountId: data.stripe_user_id,
+          type_token: data.token_type,
+          scope: data.scope,
+          isEnable: true,
+        };
+      } catch (error: any) {
+        console.error(
+          'Stripe exchange token error:',
+          error.response?.data || error.message,
+        );
+        throw new InternalServerErrorException(
+          'Error exchanging Stripe code for token',
+        );
       }
-    } catch (error) {
-      console.error('Stripe exchange token error:', error.response?.data ?? error);
-      throw new InternalServerErrorException('Error exchanging Stripe code for token');
     }
-  }
 
+    private get callbackUrl(): string {
+      return `${this.appUrl}/${VERSION_APP_URL}/payment-accounts/callback/${PROVIDERS.STRIPE}`;
+    }
 
+    private get clientId(): string {
+      return this.getConfig('STRIPE_CLIENT_ID');
+    }
 
+    private get clientSecret(): string {
+      return this.getConfig('STRIPE_SECRET_KEY');
+    }
 
-    generateCallbackUrl(): string {
-      const appUrl = this.configService.get<string>('APP_URL');
+    private get appUrl(): string {
+      return this.getConfig('APP_URL');
+    }
 
-      if (!appUrl) {
-        throw new InternalServerErrorException('APP_URL not found');
+    private getConfig(key: string): string {
+      const value = this.configService.get<string>(key);
+      if (!value) {
+        throw new InternalServerErrorException(`${key} not found`);
       }
-
-      return `${appUrl}/${VERSION_APP_URL}/payment-accounts/callback/${PROVIDERS.STRIPE}`;
+      return value;
     }
-    
 }
