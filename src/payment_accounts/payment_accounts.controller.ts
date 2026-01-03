@@ -16,8 +16,6 @@ export class PaymentAccountsController {
 
 
    
-  
-
 
     @Role(Roles.OWNER)
     @Get('/oauth/:provider/connect')
@@ -29,33 +27,30 @@ export class PaymentAccountsController {
     }
     
 
-
     @Public()
-    @Get('callback/MERCADO_PAGO')
-    callbackMP(){
-      
-    }
-
-
-    @Public()
-    @Get('callback/STRIPE')
-    async callbackStripe(@Query('code') code?: string,@Query('state') state?: string,@Query('error') error?: string){
+    @Get('callback/:provider')
+    async callbackOAuth(@Param('provider') provider: string,@Query('code') code?: string,@Query('state') state?: string,
+                        @Query('error') error?: string
+    ) {
       if (error) {
-        throw new BadRequestException('Stripe authorization failed');
+        throw new BadRequestException(`${provider} authorization failed`);
       }
 
       if (!code || !state) {
         throw new BadRequestException('Missing code or state');
       }
 
-      await this.paymentAccountsService.exchangeCodeForToken(state,PROVIDERS.STRIPE,code);
+      const providerEnum = provider.toUpperCase();
+      if (!Object.values(PROVIDERS).includes(providerEnum as any)) {
+        throw new BadRequestException('Unsupported provider');
+      }
+      await this.paymentAccountsService.exchangeCodeForToken(state, providerEnum as PROVIDERS, code);
 
       return {
         success: true,
-        message: 'Stripe account connected successfully',
+        message: `${providerEnum} account connected successfully`,
       };
     }
-
 
 
  
