@@ -2,7 +2,7 @@ import { Injectable } from "@nestjs/common";
 import { PaymentStrategyFactory } from "../strategies/PaymentStrategyFactory";
 import { InjectRepository } from "@nestjs/typeorm";
 import { PaymentIntent } from "../entities/payments.entity";
-import { DataSource, In, Repository } from "typeorm";
+import { DataSource,Repository } from "typeorm";
 import { EnqueueMailServices } from "src/queue-bull/enqueue-mail-services";
 import { ParserNotificationData } from "src/common/helpers/parserNotificationData";
 import { PaymentEvent } from "../interfaces/create.payment";
@@ -137,6 +137,8 @@ export class WebHookService {
       payment.payment_type = paymentCurrent.paymentMethod ?? '';
       payment.currency = paymentCurrent.currency;
       payment.status = PAYMENTS_STATUS.PAID;
+      payment.fee_amount= paymentCurrent.feeAmount.toString();
+      payment.destination_account = paymentCurrent.destinationAccount!
     }
     
 
