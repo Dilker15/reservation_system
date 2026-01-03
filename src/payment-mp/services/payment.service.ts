@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException,InternalServerErrorException} from "@nestjs/common";
+import { Injectable, NotFoundException,InternalServerErrorException, Provider, BadRequestException} from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { ConfigService } from "@nestjs/config";
@@ -8,6 +8,7 @@ import { CreatePaymentData, CreatePaymentResponse } from "../interfaces/create.p
 import { Reservation } from "src/reservation/entities/reservation.entity";
 import { PROVIDERS, RESERVATION_STATUS } from "src/common/Interfaces";
 import { PaymentIntent } from "../entities/payments.entity";
+import { PaymentAccount } from "src/payment_accounts/entities/payment_account.entity";
 
 
 @Injectable()
@@ -36,22 +37,23 @@ export class PaymentService {
             }
         });
 
+       
         if (!reservation) {
             throw new NotFoundException("Reservation not found or payment already initiated/completed");
         }
-
-        if(reservation.place.owner.payment_accounts?.length === 0){
+        const paymentAccountVendor = reservation?.place.owner.payment_accounts;
+        if(paymentAccountVendor?.length === 0){
             throw new NotFoundException("Payment method not found for this place");
         }
         
-      
+        
         const intentId = this.generateIntentId();
         const paymentData = this.mapReservationToPaymentData(reservation, provider, intentId);
         
         try {
-           
+            const account = this.getPaymentAccountOrFail(paymentAccountVendor!,provider);
             const strategy = this.paymentFactory.getStretegy(provider);
-            const preference = await strategy.createPayment(paymentData);
+            const preference = await strategy.createPayment(paymentData,account);
             
           
             await this.paymentIntentRepo.save({
@@ -94,7 +96,6 @@ export class PaymentService {
                 title: reservation.place.name,
                 description: reservation.place.description,
             }],
-            
             metadata: {
                 reservationId: reservation.id,
             },
@@ -117,8 +118,18 @@ export class PaymentService {
     private generateIntentId():string{
         return uuidv4();
     }
-}
 
+
+    private getPaymentAccountOrFail(paymentAccounts: PaymentAccount[],provider: PROVIDERS): PaymentAccount {
+        const account = paymentAccounts.find(acc => acc.provider === provider);
+        if (!account) {
+          throw new BadRequestException(`Payment account for provider ${provider} not found`);
+        }
+        return account;
+      }
+      
+      
+}
 
 
 

@@ -1,7 +1,7 @@
 import { PROVIDERS } from "src/common/Interfaces";
 
 
-interface ItemData {
+export interface ItemData {
 
     id:string,
     unit_price:number,
@@ -81,5 +81,7 @@ export interface VerifyPaymentResult {
   external_reference:string,
   payerId?:string,
   currency:string,
+  feeAmount:number,
+  destinationAccount?:string,
   
 }
