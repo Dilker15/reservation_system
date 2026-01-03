@@ -18,10 +18,7 @@ export class PaymentAccountsService {
               private readonly tokenEncryptService:TokenEncrytionService,
 
 ){
-
   }
-
-
 
   async createUrlAuth(admin:User,provider:PROVIDERS):Promise<string> {
     try{
@@ -32,7 +29,6 @@ export class PaymentAccountsService {
          console.log(error);
          throw new InternalServerErrorException(error);
     }
-    
   
   }
 
@@ -41,7 +37,7 @@ export class PaymentAccountsService {
     const strategy = this.strategyFactory.getStrategy(provider);
     try{
 
-       const userId = await this.stateService.validate(state);
+        const userId = await this.stateService.validate(state);
         const data = await strategy.exchangeCodeForToken(code);
         await this.paymentAccountRepo.save({
           access_token:this.tokenEncryptService.encrypt(data.access_token),
@@ -53,6 +49,7 @@ export class PaymentAccountsService {
         });
     }catch(error){
        console.log(error);
+       throw new InternalServerErrorException("Unexpected error");
     }
   }
 

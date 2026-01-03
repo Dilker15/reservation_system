@@ -12,7 +12,7 @@ export class OAuthStates{
     @Column({name:'state',type:'varchar', length:255})
     state:string;
 
-   @OneToOne(() => User, (user) => user)
+    @OneToOne(() => User, (user) => user)
     @JoinColumn({ name: 'admin_id' })
     admin: User;
 
