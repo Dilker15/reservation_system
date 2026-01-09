@@ -10,6 +10,9 @@ import { RegisterDto } from "./dto/register-auth-dto";
 import { Roles } from "src/common/Interfaces";
 import { BadRequestException, InternalServerErrorException } from "@nestjs/common";
 import { LoginDto } from "./dto/login.dto";
+import { AppLoggerService } from "src/logger/logger.service";
+import { error } from "console";
+import { VerifyEmailDto } from "./dto/verify-email.dto";
 
 describe("auth.service.ts", () => {
   let service: AuthService;
@@ -24,6 +27,14 @@ describe("auth.service.ts", () => {
       role: Roles.OWNER,
     }),
   };
+
+  let mockLogger:Partial<AppLoggerService> = {
+     withContext:jest.fn().mockReturnValue({
+        error:jest.fn(),
+        warn:jest.fn(),
+        log:jest.fn(),
+     })
+  }
 
   const mockedUser = {
     id: "test-id", email: "test@gmail.com", password: "secure123" 
@@ -42,6 +53,7 @@ describe("auth.service.ts", () => {
 
   let mockUserService: Partial<jest.Mocked<UsersService>> = {
     findUserQuery: jest.fn().mockResolvedValue(mockedUser),
+    activateUser:jest.fn(),
   }
 
   let mockBcrypService: Partial<jest.Mocked<BcryptService>> = {
@@ -79,8 +91,8 @@ describe("auth.service.ts", () => {
           useValue: { signAsync: jest.fn().mockResolvedValue('tokenTest') },
         },
         {
-          provide: ConfigService,
-          useValue: mockConfigService,
+          provide:AppLoggerService,
+          useValue: mockLogger,
         },
         AuthService,
       ]
@@ -166,6 +178,12 @@ describe("auth.service.ts", () => {
   });
 
 
-  
+  it("should verifyEmail and activate user",async()=>{
+      const data:VerifyEmailDto = {email:'test@gmail.com',verification_code:'23423'};
+      await service.verifyEmail(data);
+      expect(mockUserService.activateUser).toHaveBeenCalledWith(data);
+  })
+
+
   
 });

@@ -4,17 +4,20 @@ import { User } from "src/users/entities/user.entity";
 
 
 
-export const GetClient = createParamDecorator((data:string|undefined,ctx:ExecutionContext)=>{
 
-    console.log("get client");
+
+
+
+export const getClientFunc = (data:string|undefined,ctx:ExecutionContext)=>{
     const requ = ctx.switchToHttp().getRequest();
     const user = requ.user as User;
     if(!user )
-        throw new InternalServerErrorException('User not found OR  jtw(error)');
+        throw new InternalServerErrorException('Client not found OR  jtw(error)');
 
-    console.log(user);
     if(!user.role.includes(Roles.CLIENT))
         throw new BadRequestException("Invalid Role for this action");
 
     return user;
-})
+}
+
+export const GetClient = createParamDecorator(getClientFunc)

@@ -30,7 +30,6 @@ export class AuthService {
     private readonly userServices:UsersService,
     private readonly bcryptService:BcryptService,
     private readonly jwtService:JwtService,
-    private readonly conf:ConfigService,
     private readonly loggerService:AppLoggerService,
   ){
      this.logger = loggerService.withContext(AuthService.name);

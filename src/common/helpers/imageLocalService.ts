@@ -1,8 +1,8 @@
-import { Injectable, NotImplementedException } from "@nestjs/common";
-import { Console } from "console";
+import { Injectable, } from "@nestjs/common";
 import { promises as fs } from 'fs';
 import { join } from 'path';
-const { v4: uuidv4 } = require('uuid');
+import { v4 as uuidv4 } from 'uuid';
+
 
 
 @Injectable()
@@ -16,7 +16,7 @@ export class ImageLocalService{
             const savedPaths: string[] = [];
           
           for (const image of images) {
-            const filename:string = `${uuidv4()}-${image.originalname}`;
+            const filename:string = `${uuidv4}}-${image.originalname}`;
             const filepath = join(this.pathImages, filename);
             await fs.writeFile(filepath, image.buffer);
             savedPaths.push(filename);
@@ -29,7 +29,6 @@ export class ImageLocalService{
 
 
     async removeImageDisk(imagesLocalPath: string[]): Promise<void> {
-    console.log("REMOTE METHOD : ",imagesLocalPath);
     const deleteTasks = imagesLocalPath.map(async (imgPath) => {
       try {
         await fs.unlink(this.pathImages+'/'+imgPath);
@@ -37,7 +36,7 @@ export class ImageLocalService{
         if (err.code === 'ENOENT') {
           console.error("imagen no encontrada");
         } else {
-         console.error("error al eliminar");
+         console.error("error al eliminar imagen :",imgPath);
         }
       }
     });

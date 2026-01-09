@@ -18,7 +18,6 @@ export class MercadoPagoWebhookGuard implements CanActivate {
       const bo = req.body;
       const xSignature = req.headers['x-signature'];
       const xRequestId = req.headers['x-request-id'];
-
       if(!bo.action || ( bo.action && bo.action != 'payment.created')){
           return false;
       }
