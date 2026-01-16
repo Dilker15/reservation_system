@@ -27,7 +27,4 @@ export class StripeWebHookController{
       return {received:true};
     }
 
-
-
-
-}
+} 

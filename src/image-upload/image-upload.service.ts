@@ -22,7 +22,7 @@ export class ImageUploadService implements IImageUpload{
   async uploadImages(filesPath:string[]): Promise<UploadApiResponse[]> {
         try{
             const uploads: Promise<UploadApiResponse>[] = filesPath.map((filename) => {
-              const filePath = join(process.cwd(), 'uploads', 'images', 'places', filename);
+            const filePath = join(process.cwd(), 'uploads', 'images', 'places', filename);
               return this.cloudinary.uploader.upload(filePath);
             });
             const results: UploadApiResponse[] = await Promise.all(uploads);
@@ -45,12 +45,6 @@ export class ImageUploadService implements IImageUpload{
   }
 
 
-  getImagesByPlace(placeId: string): Promise<void> {
-    throw new Error('Method not implemented.');
-  }
-  getImageById(id: string): Promise<void> {
-    throw new Error('Method not implemented.');
-  }
 
 
 

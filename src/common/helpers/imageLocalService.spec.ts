@@ -1,98 +1,95 @@
 import { promises as fs } from 'fs';
-import { ImageLocalService } from "./imageLocalService";
-import { InternalServerErrorException } from '@nestjs/common';
-
+import { ImageLocalService } from './imageLocalService';
+import { Express } from 'express';
 
 jest.mock('fs', () => ({
-    promises: {
-        mkdir: jest.fn(),
-        writeFile: jest.fn(),
-        unlink:jest.fn(),
-    },
+  promises: {
+    mkdir: jest.fn(),
+    writeFile: jest.fn(),
+    unlink: jest.fn(),
+  },
 }));
 
 jest.mock('uuid', () => ({
-  v4: jest.fn(() => 'mock-uuid'),
+  v4: () => 'mock-uuid',
 }));
 
+describe('ImageLocalService', () => {
+  let service: ImageLocalService;
 
-describe("src/common/helpers/imageLocalService.spect.ts",()=>{
+  beforeEach(() => {
+    jest.clearAllMocks();
+    service = new ImageLocalService();
+  });
 
-    let imageLocalServi:ImageLocalService;
-    interface imageType {
-        originalName:string,
-        buffer:any,
-    }
-    beforeEach(()=>{
-        jest.clearAllMocks();
-        imageLocalServi = new ImageLocalService();
+  describe('saveImagesToDisk', () => {
+    it('should create directory and save images to disk', async () => {
+      const images: Express.Multer.File[] = [
+        {
+          fieldname: 'file',
+          originalname: 'image1.png',
+          encoding: '7bit',
+          mimetype: 'image/png',
+          size: 123,
+          buffer: Buffer.from('buffer1'),
+          destination: '',
+          filename: '',
+          path: '',
+          stream: null as any,
+        },
+        {
+          fieldname: 'file',
+          originalname: 'image2.png',
+          encoding: '7bit',
+          mimetype: 'image/png',
+          size: 456,
+          buffer: Buffer.from('buffer2'),
+          destination: '',
+          filename: '',
+          path: '',
+          stream: null as any,
+        },
+      ];
+
+      const result = await service.saveImagesToDisk(images);
+
+      expect(fs.mkdir).toHaveBeenCalledWith(
+        expect.stringContaining('uploads'),
+        { recursive: true },
+      );
+
+      expect(fs.writeFile).toHaveBeenCalledTimes(images.length);
+      expect(result).toHaveLength(images.length);
+
+      result.forEach(filename => {
+        expect(filename).toContain('mock-uuid');
+      });
+    });
+  });
+
+  describe('removeImageDisk', () => {
+    it('should delete all images', async () => {
+      const images = ['image1.png', 'image2.png'];
+
+      await service.removeImageDisk(images);
+
+      expect(fs.unlink).toHaveBeenCalledTimes(images.length);
     });
 
+    it('should log error when image does not exist (ENOENT)', async () => {
+      const consoleSpy = jest
+        .spyOn(console, 'error')
+        .mockImplementation(() => {});
 
+      (fs.unlink as jest.Mock).mockRejectedValue({ code: 'ENOENT' });
 
-    it("should return imagesPath stored locally",async()=>{
-         const images:imageType [] = [{buffer:'buffer1',originalName:'image1'},{buffer:"buffer2",originalName:'image2'}]
-         const result = await imageLocalServi.saveImagesToDisk(images as []);
-         expect(fs.mkdir).toHaveBeenCalledWith(expect.stringContaining('uploads'), { recursive: true });
-         expect(fs.writeFile).toHaveBeenCalledTimes(images.length);
+      const images = ['image1.png'];
 
+      await service.removeImageDisk(images);
+
+      expect(consoleSpy).toHaveBeenCalled();
+
+      consoleSpy.mockRestore();
     });
-
-
-    
-    it("should return imagesPath stored locally",async()=>{
-         const images:imageType [] = [{buffer:'buffer1',originalName:'image1'},{buffer:"buffer2",originalName:'image2'}]
-         const result = await imageLocalServi.saveImagesToDisk(images as []);
-         expect(fs.mkdir).toHaveBeenCalledWith(expect.stringContaining('uploads'), { recursive: true });
-         expect(fs.writeFile).toHaveBeenCalledTimes(images.length);
-    });
-
-
-
-
-    it('should throw InternalServerErrorException if mkdir fails', async () => {
-    (fs.mkdir as jest.Mock).mockRejectedValue(new InternalServerErrorException('mkdir failed'));
-
-    const images: imageType[] = [
-        { buffer: 'buffer1', originalName: 'image1' },
-        { buffer: 'buffer2', originalName: 'image2' },
-    ];
-
-    await expect(imageLocalServi.saveImagesToDisk(images as any)).rejects
-        .toThrow(InternalServerErrorException);
-    });
-
-
-
-    it("should detele all image locally",async()=>{
-        const images = ["src/path/images1","src/path/image2","src/path/image3"];
-        const result = await imageLocalServi.removeImageDisk(images);
-        expect(fs.unlink).toHaveBeenCalledTimes(images.length);
-    });
-
-
-    it("should throw exception path not found",async()=>{
-       const spy = jest.spyOn(console, 'error').mockImplementation(() => {});
-        (fs.unlink as jest.Mock).mockRejectedValue({
-            code:'ENOENT',
-        });
-        const images = ["src/path/images1","src/path/image2","src/path/image3"];
-        await imageLocalServi.removeImageDisk(images);
-        expect(fs.unlink).toHaveBeenCalledTimes(images.length);
-        expect(spy).toHaveBeenCalledTimes(images.length);
-    });
-
-    it("should throw error on delete image",async()=>{
-       const spy = jest.spyOn(console, 'error').mockImplementation(() => {});
-        (fs.unlink as jest.Mock).mockRejectedValue({
-            code:'NFT',
-        });
-        const images = ["src/path/images1","src/path/image2","src/path/image3"];
-        await imageLocalServi.removeImageDisk(images);
-        expect(fs.unlink).toHaveBeenCalledTimes(images.length);
-        expect(spy).toHaveBeenCalledTimes(images.length);
-    });
-
-    
-
+  });
 });

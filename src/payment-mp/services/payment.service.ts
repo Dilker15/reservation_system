@@ -126,7 +126,7 @@ export class PaymentService {
           throw new BadRequestException(`Payment account for provider ${provider} not found`);
         }
         return account;
-      }
+    }
       
       
 }

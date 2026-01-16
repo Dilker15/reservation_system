@@ -14,7 +14,7 @@ export class PaymentMpController {
   @Public()
   @Get('checkout/:reservation/:provider')
   async createPayment(@Param('reservation',ParseUUIDPipe) reservation:string,@Param('provider',new ParseEnumPipe(PROVIDERS)) provider:PROVIDERS){
-    return await this.paymentServices.createPayment(reservation,provider);
+    return this.paymentServices.createPayment(reservation,provider);
   }
 
 }

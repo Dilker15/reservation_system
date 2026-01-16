@@ -2,6 +2,7 @@ import { Test } from "@nestjs/testing";
 import { EmailsService } from "./emails.service"
 import * as fs from 'fs/promises';
 import { InternalServerErrorException } from "@nestjs/common";
+import { AppLoggerService } from "src/logger/logger.service";
 
 
 const mockTransport = {
@@ -16,6 +17,11 @@ jest.mock('fs/promises',()=>({
 describe("Email Services",()=>{
 
   let emailsService:EmailsService;
+  let mockLogger = {
+      withContext:jest.fn().mockReturnValue({
+          error:jest.fn(),
+      })
+  };
 
   beforeEach(async()=>{
      const ref = await Test.createTestingModule({
@@ -24,6 +30,10 @@ describe("Email Services",()=>{
           {
             provide:'MAIL_TRANSPORT',
             useValue:mockTransport
+          },
+          {
+            provide:AppLoggerService,
+            useValue:mockLogger,
           }
         ]
      }).compile();
