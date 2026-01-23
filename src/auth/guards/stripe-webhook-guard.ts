@@ -30,7 +30,7 @@ export class StripeWebhookGuard implements CanActivate{
             req.stripeEvent=event;
             return true;
         }catch(error){
-            console.log(error);
+            //console.log(error);
             throw new BadRequestException('Error validation sign');
         }
     }

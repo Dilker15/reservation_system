@@ -26,7 +26,7 @@ export class PaymentAccountsService {
           const strategy:OAuthStrategy = this.strategyFactory.getStrategy(provider)
           return strategy.generateAuthUrl(state);
     }catch(error){
-         console.log(error);
+         //console.log(error);
          throw new InternalServerErrorException(error);
     }
   
@@ -48,7 +48,7 @@ export class PaymentAccountsService {
           token_type:data.type_token
         });
     }catch(error){
-       console.log(error);
+       //console.log(error);
        throw new InternalServerErrorException("Unexpected error");
     }
   }

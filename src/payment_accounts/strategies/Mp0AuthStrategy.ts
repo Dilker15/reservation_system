@@ -43,10 +43,6 @@ export class MercadoPagoOAuthStrategy implements OAuthStrategy {
         isEnable: true,
       };
     } catch (error: any) {
-      console.error(
-        'Error exchanging code MP:',
-        error.response?.data || error.message,
-      );
       throw new Error('Failed to exchange Mercado Pago code');
     }
   }

@@ -9,6 +9,7 @@ import { EMAIL_TYPE, Roles } from 'src/common/Interfaces';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { RegisterDto } from 'src/auth/dto/register-auth-dto';
 import { ConflictException, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { AppLoggerService } from 'src/logger/logger.service';
 
 describe('UsersService', () => {
   let service: UsersService;
@@ -16,6 +17,13 @@ describe('UsersService', () => {
   let mockGeneratorCode:Partial<jest.Mocked<GeneratorCodeService>>;
   let mockBcrypService:Partial<jest.Mocked<BcryptService>>;
   let mockEnqueMail:Partial<jest.Mocked<EnqueueMailServices>>;
+  let mockLoggerContext:Partial<AppLoggerService>;
+
+  let mockLogger = {
+     warn:jest.fn(),
+     log:jest.fn(),
+     error:jest.fn(),
+  }
 
   const userMockData:User = { 
     created_at:new Date(),
@@ -55,6 +63,10 @@ describe('UsersService', () => {
       enqueEmail:jest.fn(),
     }
 
+    mockLoggerContext = {
+          withContext:jest.fn().mockReturnValue(mockLogger),
+    }
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         UsersService,
@@ -73,7 +85,12 @@ describe('UsersService', () => {
         {
           provide:getRepositoryToken(User),
           useValue:mockUserRepo,
+        },
+        {
+          provide:AppLoggerService,
+          useValue:mockLoggerContext,
         }
+
 
       ],
     }).compile();

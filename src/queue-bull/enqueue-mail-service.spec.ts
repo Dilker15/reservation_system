@@ -3,15 +3,24 @@ import { getQueueToken } from "@nestjs/bullmq";
 import { EnqueueMailServices } from "./enqueue-mail-services"
 import {TestingModule,Test } from "@nestjs/testing";
 import { EMAIL_TYPE } from "src/common/Interfaces";
+import { AppLoggerService } from "src/logger/logger.service";
 
 
 const mockqueue ={
     add:jest.fn(),
 }
+const mockData = {
+    log:jest.fn(),
+    error:jest.fn(),
+}
 
 describe("Enqueue mail services",()=>{
 
     let enqueService:EnqueueMailServices;
+
+    let mockLogger = {
+        withContext:()=>mockData
+    }
 
     beforeEach(async()=>{
         const refMod:TestingModule= await Test.createTestingModule({
@@ -20,6 +29,10 @@ describe("Enqueue mail services",()=>{
                 {
                     provide:getQueueToken('emails-queue'),
                     useValue:mockqueue,
+                },
+                {
+                    provide:AppLoggerService,
+                    useValue:mockLogger,
                 }
             ]
         }).compile();

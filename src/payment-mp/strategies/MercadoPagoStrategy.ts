@@ -47,7 +47,7 @@ export class MercadoPagoStrategy implements IPaymentProvider{
 
      return this.transformPreferenceResponse(responseMp);
      }catch(error){
-        console.log(error);
+        //console.log(error);
         throw new InternalServerErrorException("Unexpected error MP payment");
      }
         

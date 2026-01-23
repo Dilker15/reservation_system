@@ -1,5 +1,5 @@
 import { Processor, WorkerHost } from "@nestjs/bullmq";
-import { InternalServerErrorException } from "@nestjs/common";
+import { BadRequestException, InternalServerErrorException } from "@nestjs/common";
 import { Job } from "bullmq";
 import { ImageLocalService } from "src/common/helpers/imageLocalService";
 import { ImageUploadService } from "src/image-upload/image-upload.service";
@@ -27,13 +27,15 @@ export class ImageUploadProcessor extends WorkerHost{
     async process(job: Job, token?: string): Promise<any> {
             switch(job.name){
                 case 'upload-images-cloud':{
-                    this.uploadImages(job);
+                    await this.uploadImages(job);
                     break;
                 }
                 case 'update-images-cloud':{
-                    this.updateImages(job);
+                    await this.updateImages(job);
                     break;
                 }
+                default:
+                    throw new BadRequestException('Job_name doest not exist : '+job.name);
             }
     }
 
@@ -54,7 +56,7 @@ export class ImageUploadProcessor extends WorkerHost{
 
 
     private async updateImages(job:Job){
-        const {place,images,owner} = job.data;
+        const {place,images} = job.data;
         try{
             const imagesUploaded = await this.uploadImageServices.uploadImages(images);
             await this.placeService.updateImagesPlace(place,imagesUploaded);

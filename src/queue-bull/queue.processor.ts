@@ -21,7 +21,6 @@ export class MailsProcessor extends WorkerHost{
 
     async process(job: Job, token?: string): Promise<any> {
         const {to,data,notification_type} = job.data.data;
-        
         switch(notification_type){
             case EMAIL_TYPE.VERIFICATION_CODE:
                 await this.emailService.sendEmailVerificationCode(to,data.code);
