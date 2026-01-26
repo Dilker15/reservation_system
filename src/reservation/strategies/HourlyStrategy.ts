@@ -55,11 +55,22 @@ export class HourlyStrategy implements BookingStrategy {
   }
 
   private timeDiffHours(start: string, end: string): number {
-        const m1 = this.timeToMinutes(start);
-        const m2 = this.timeToMinutes(end);
-        const diff = (m2 - m1) / 60;
-        return diff;
+      const m1 = this.timeToMinutes(start);
+      const m2 = this.timeToMinutes(end);
+
+      const diffMinutes = m2 - m1;
+
+      if (diffMinutes <= 0) {
+       throw new BadRequestException('End time must be after start time');
+      }
+
+      if (diffMinutes % 60 !== 0) {
+       throw new BadRequestException('Time difference must be in exact hours');
+      }
+
+      return diffMinutes / 60;
   }
+
 
   async ensureAvailability(dto: CreateReservationDto, manager: EntityManager): Promise<void> {
         const repo = manager.getRepository(Reservation);

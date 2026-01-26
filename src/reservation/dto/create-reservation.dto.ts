@@ -2,7 +2,7 @@ import { Transform, Type } from "class-transformer";
 import { IsDateString, IsNumber, IsOptional, IsString, IsUUID, Matches, Max, Min } from "class-validator";
 
 export class CreateReservationDto {
-    private static readonly TIME_REGEX = /^([01]\d|2[0-3]):([0-5]\d):00$/; // Actualizado para validar HH:mm:00
+    private static readonly TIME_REGEX = /^([01]\d|2[0-3]):([0-5]\d):00$/; 
 
     @IsDateString()
     reservation_start_date: string;
