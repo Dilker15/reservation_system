@@ -16,12 +16,12 @@ import { PlaceResponseDto } from './dto/place.response.dto';
 import { PaginationDto } from 'src/common/dtos/pagination.dto';
 import { plainToInstance } from 'class-transformer';
 import { UpdatePlaceDto } from './dto/update-place.dto';
-import { ImageLocalService } from 'src/common/helpers/imageLocalService';
 import { LocationsService } from 'src/locations/locations.service';
 import { ImageUploadService } from 'src/image-upload/image-upload.service';
 import { UpdateLocationDto } from 'src/locations/dto/update.location.dto';
 import { OpeningHour } from 'src/opening-hours/entities/opening-hour.entity';
 import { CalendarAvailabityDto } from 'src/common/dtos/calendarAvailabity';
+import { BookingModeType } from 'src/common/Interfaces';
 
 
 @Injectable()
@@ -43,43 +43,71 @@ export class PlacesService {
 
 
 
+  async create(createPlaceDto: CreatePlaceDto, pathImages: string[], user: User) {
+    return this.createPlaceCommon(createPlaceDto, pathImages, user, true);
+  }
 
-  async create(createPlaceDto: CreatePlaceDto,pathImages:string[],user:User) {
-    const queryRunner = this.dataSource.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
-    
-    try{
-       const placeRepo = queryRunner.manager.getRepository(Place);
-       const [cityData,bookingData,categoryData] = await this.getInformationToCreatePlace(createPlaceDto.category_id,createPlaceDto.booking_mode_id,createPlaceDto.city_id,);
-       const placetoCreate = placeRepo.create({...createPlaceDto,city:cityData,booking_mode:bookingData,category:categoryData,owner:user,
-                                                   location:{
-                                                    latitude:createPlaceDto.latitude,
-                                                    longitude:createPlaceDto.longitude,
-                                                   },
-                                                  opening_hours: createPlaceDto.opening_hours.map(h => ({
-                                                                  ...new OpeningHour(),
-                                                                  day: h.day,
-                                                                  open_time: h.open_time,
-                                                                  close_time: h.close_time,
-                                                                }))
-                                                              });
-       const placeCreated = await placeRepo.save(placetoCreate);
-       await this.enqueueImageService.enqueImagesToUpload(placeCreated.id,pathImages);
-       this.logger.log('places created successfully');
-       await queryRunner.commitTransaction();
-       return placeCreated;
-    }catch(error){
-       await queryRunner.rollbackTransaction();
-       this.throwCommonError(error,"Error cretae Place Somehting was wrong");
-    }finally{
-      await queryRunner.release();
-    }
+  async createRange(createPlaceDto: CreatePlaceDto, pathImages: string[], user: User) {
+    return this.createPlaceCommon(createPlaceDto, pathImages, user, false);
   }
 
 
 
 
+  private async createPlaceCommon(createPlaceDto: CreatePlaceDto,pathImages: string[],user: User,isHourly: boolean){
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      const booking = await this.bookinModeRepo.findOneByOrFail({ id: createPlaceDto.booking_mode_id });
+      if (isHourly && booking.type != BookingModeType.HOURLY) {
+        throw new BadRequestException('Booking Mode is not correct is hourly');
+      }
+      if (!isHourly && booking.type == BookingModeType.HOURLY) {
+        throw new BadRequestException('Booking Mode is not correct is not hourly');
+      }
+
+      const placeRepo = queryRunner.manager.getRepository(Place);
+      const [cityData, bookingData, categoryData] = await this.getInformationToCreatePlace(
+        createPlaceDto.category_id,
+        createPlaceDto.booking_mode_id,
+        createPlaceDto.city_id
+      );
+
+      const placetoCreate = placeRepo.create({
+        ...createPlaceDto,
+        city: cityData,
+        booking_mode: bookingData,
+        category: categoryData,
+        owner: user,
+        location: {
+          latitude: createPlaceDto.latitude,
+          longitude: createPlaceDto.longitude,
+        },     
+        ...(isHourly && {
+          opening_hours: createPlaceDto.opening_hours.map(h => ({
+            ...new OpeningHour(),
+            day: h.day,
+            open_time: h.open_time,
+            close_time: h.close_time,
+          })),
+        }),
+      });
+
+      const placeCreated = await placeRepo.save(placetoCreate);
+      await this.enqueueImageService.enqueImagesToUpload(placeCreated.id, pathImages);
+      this.logger.log('places created successfully');
+
+      await queryRunner.commitTransaction();
+      return placeCreated;
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      this.throwCommonError(error, 'Error creating Place. Something went wrong');
+    } finally {
+      await queryRunner.release();
+    }
+  }
 
 
   async findAll(queryParams:PaginationDto) {
