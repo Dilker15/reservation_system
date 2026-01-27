@@ -18,13 +18,14 @@ import { CalendarAvailabityDto } from 'src/common/dtos/calendarAvailabity';
 
 
 
+
 @Controller('places')
 export class PlacesController {
   constructor(private readonly placesService: PlacesService,private readonly imageLocalService:ImageLocalService) {}
 
   @UseInterceptors(ImageUploadInterceptor('images'))
   @Role(Roles.OWNER)
-  @Post()//
+  @Post('hourly')
   async create(@Body('opening_hours',ParseAndValidateJsonPipe) opening_hours:AvailabilityDto[],
                 @Body() createPlaceDto: Partial<CreatePlaceDto>,
                 @UploadedFiles() images:Express.Multer.File[],
@@ -33,6 +34,17 @@ export class PlacesController {
     const routeImages = await this.imageLocalService.saveImagesToDisk(images);
     createPlaceDto.opening_hours = opening_hours;
     return this.placesService.create(createPlaceDto as CreatePlaceDto,routeImages,currentUser);
+  }
+
+  @UseInterceptors(ImageUploadInterceptor('images'))
+  @Role(Roles.OWNER)
+  @Post('range')
+  async createRange(
+                @Body() createPlaceDto: Partial<CreatePlaceDto>,
+                @UploadedFiles() images:Express.Multer.File[],
+                @GetUser() currentUser:User) {
+    const routeImages = await this.imageLocalService.saveImagesToDisk(images);
+    return this.placesService.createRange(createPlaceDto as CreatePlaceDto,routeImages,currentUser);
   }
 
   @Public()
