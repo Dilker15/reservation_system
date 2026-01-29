@@ -10,7 +10,7 @@ export class PaginationDto{
     @Type(()=>Number)
     @IsNumber()
     @IsPositive()
-    @Max(100,{message:'limit should less or equal than 100'})
+    @Max(50,{message:'limit should less or equal than 50'})
     @IsOptional()
     limit?:number;
 
