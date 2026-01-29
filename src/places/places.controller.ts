@@ -57,8 +57,8 @@ export class PlacesController {
   
   @Role(Roles.OWNER)
   @Get('me')
-  async getPlacesOwner(@GetUser() owner: User) {
-    return this.placesService.getMyPlaces(owner);
+  async getPlacesOwner(@GetUser() owner: User,@Query() pagination:PaginationDto) {
+    return this.placesService.getMyPlaces(owner,pagination);
   }
   
   @Public()

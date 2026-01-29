@@ -20,4 +20,8 @@ export enum placeEnumStatus {
     ACTIVE = 'active',
     PROCESSING = 'processing',
     INACTIVE = 'inactive',
+    DELETE = 'deleted'
 }
+
+
+
