@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, ParseUUIDPipe } from '@nestjs/common';
 import { ReservationService } from './reservation.service';
 import { CreateReservationDto } from './dto/create-reservation.dto';
 import { UpdateReservationDto } from './dto/update-reservation.dto';
@@ -8,17 +8,29 @@ import { GetUser } from 'src/auth/decorators/getUser.decorator';
 import { Role } from 'src/auth/decorators/role.decorator';
 import { Roles } from 'src/common/Interfaces';
 
+
+
 @Controller('reservation')
 export class ReservationController {
+
   constructor(private readonly reservationService: ReservationService) {}
-
-
 
   @Role(Roles.CLIENT)
   @Post()
-  create(@Body() createReservationDto: CreateReservationDto,@GetUser() client:User) {
-    return this.reservationService.create(createReservationDto,client);
+  create(
+    @Body() createReservationDto: CreateReservationDto,
+    @GetClient() client: User
+  ) {
+    return this.reservationService.create(createReservationDto, client);
+  
   }
 
- 
+  @Role(Roles.CLIENT)
+  @Get(':id')
+  getOwnerReservation(@Param('id', ParseUUIDPipe) id: string) {
+     return this.reservationService.findOne(id);
+  }
+
+
+  
 }

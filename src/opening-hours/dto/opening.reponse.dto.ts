@@ -19,5 +19,9 @@ export class OpeningHoursResponseDto{
     @Expose()
     close_time:string;
 
+
+    @Expose()
+    is_active:boolean;
+
     
 }

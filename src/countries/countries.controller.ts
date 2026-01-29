@@ -42,5 +42,5 @@ export class CountriesController {
   getCity(@Param('id_country') id_country:string,@Param('id_city') id_city:string){
     return this.countriesService.findCity(id_country,id_city);
   }
-
+  
 }
