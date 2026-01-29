@@ -23,6 +23,7 @@ import { OpeningHour } from 'src/opening-hours/entities/opening-hour.entity';
 import { CalendarAvailabityDto } from 'src/common/dtos/calendarAvailabity';
 import { ReservationService } from 'src/reservation/reservation.service';
 import { BookingModeType} from 'src/common/Interfaces';
+import { PlaceListDto } from './dto/placeList.dto';
 
 
 @Injectable()
@@ -153,27 +154,38 @@ export class PlacesService {
     }
   }
 
-  async getMyPlaces(owner:User){
-    try{
-      const placesFound = await this.placeRepo
-      .createQueryBuilder('place')
-      .leftJoin('place.booking_mode', 'booking_mode')
-      .leftJoin('place.category', 'category')
-      .where('place.owner_id = :ownerId', { ownerId: owner.id })
-      .select([
-        'place.id',
-        'place.name',
-        'place.price',
-        'booking_mode.name',
-        'category.name',
-      ])
-      .getMany();
-      console.log(placesFound);
-     return placesFound;
-    }catch(error){
-      this.throwCommonError(error,"Something was wrong getMyPlaces");
+  async getMyPlaces(owner: User,pagination: PaginationDto) {
+    const { limit = 10, page = 1 } = pagination;
+    try {
+      const query = this.placeRepo
+        .createQueryBuilder('place')
+        .leftJoin('place.booking_mode', 'booking_mode')
+        .leftJoin('place.category', 'category')
+        .where('place.owner_id = :ownerId', { ownerId: owner.id })
+        .select([
+          'place.id AS id',
+          'place.name AS name',
+          'place.price AS price',
+          'booking_mode.name AS "bookingMode"',
+          'category.name AS category',
+          'place.status AS status',
+        ])
+        .orderBy('place.created_at', 'DESC')
+        .offset((page - 1) * limit)
+        .limit(limit);
+
+      const data: PlaceListDto[] = await query.getRawMany();
+      const total = await query.clone()
+                              .offset(undefined)
+                              .limit(undefined)
+                              .getCount();
+
+      return {total,page,limit,items:data};
+    } catch (error) {
+      this.throwCommonError(error, 'Something was wrong getMyPlaces');
     }
-  }
+}
+
 
 
   async findOne(placeId: string,currentOwner?: User): Promise<PlaceResponseDto> {
@@ -540,7 +552,7 @@ export class PlacesService {
 
 
   private throwCommonError(error:any,messageError:string){
-    this.logger.error(messageError,error.stack || 'trace not found on updatePlace');
+    this.logger.error(messageError,error.stack || 'trace not found on Place');
      if (error instanceof BadRequestException) {
        this.logger.warn(messageError);
         throw error;
