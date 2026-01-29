@@ -2,7 +2,7 @@ import { BadRequestException, Inject, Injectable, InternalServerErrorException }
 import { CreatePlaceDto } from './dto/create-place.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Place } from './entities/place.entity';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, In, Repository } from 'typeorm';
 import { User } from 'src/users/entities/user.entity';
 import { Category } from 'src/categories/entities/category.entity';
 import { BookingMode } from 'src/booking-mode/entities/booking-mode.entity';
@@ -21,7 +21,8 @@ import { ImageUploadService } from 'src/image-upload/image-upload.service';
 import { UpdateLocationDto } from 'src/locations/dto/update.location.dto';
 import { OpeningHour } from 'src/opening-hours/entities/opening-hour.entity';
 import { CalendarAvailabityDto } from 'src/common/dtos/calendarAvailabity';
-import { BookingModeType } from 'src/common/Interfaces';
+import { ReservationService } from 'src/reservation/reservation.service';
+import { BookingModeType} from 'src/common/Interfaces';
 
 
 @Injectable()
@@ -37,6 +38,8 @@ export class PlacesService {
               private readonly appLogService:AppLoggerService,
               private readonly locationService:LocationsService,
               private readonly imageUploadService:ImageUploadService,
+              @InjectRepository(OpeningHour) private readonly openingHourRepo:Repository<OpeningHour>,
+              private readonly reservationService:ReservationService,
 ){
   this.logger = this.appLogService.withContext(PlacesService.name);
   }
@@ -110,54 +113,135 @@ export class PlacesService {
   }
 
 
-  async findAll(queryParams:PaginationDto) {
-    const {limit=10,page=1} = queryParams;
-    try{
+  async findAll(queryParams: PaginationDto) {
+    const {limit = 10, page = 1} = queryParams;
+    
+    try {
       const querySql = this.buildQueryFilterPlaces(queryParams);
-      querySql.limit(limit)
-               .offset(limit*(page-1));
-      const [data,total]= await querySql.getManyAndCount();
-      return {total,page,limit,data}
-    }catch(error){
-      this.logger.error(error.message,error.stack);
+      querySql
+        .orderBy('place.created_at', 'DESC')
+        .limit(limit)
+        .offset(limit * (page - 1));
+      
+      const [data, total] = await querySql.getManyAndCount();
+      
+      if (data.length > 0) {
+        const placeIds = data.map(place => place.id);
+        const places = await this.placeRepo.find({
+          where: { id: In(placeIds) },
+          relations: ['images'],
+          select: {
+            id: true,
+            images: {
+              url: true 
+            }
+          }
+        });
+        
+        data.forEach(place => {
+          const fullPlace = places.find(p => p.id === place.id);
+          if (fullPlace) {
+            place.images = fullPlace.images;
+          }
+        });
+      }
+      
+      return {total, page, limit, data}
+    } catch(error) {
+      this.logger.error(error.message, error.stack);
       throw new InternalServerErrorException("Something was wrong get places");
     }
   }
 
-
   async getMyPlaces(owner:User){
     try{
-        const placesFound = await this.placeRepo.find({where:{owner: { id: owner.id},status:placeEnumStatus.ACTIVE}});
-        return placesFound;
+      const placesFound = await this.placeRepo
+      .createQueryBuilder('place')
+      .leftJoin('place.booking_mode', 'booking_mode')
+      .leftJoin('place.category', 'category')
+      .where('place.owner_id = :ownerId', { ownerId: owner.id })
+      .select([
+        'place.id',
+        'place.name',
+        'place.price',
+        'booking_mode.name',
+        'category.name',
+      ])
+      .getMany();
+      console.log(placesFound);
+     return placesFound;
     }catch(error){
       this.throwCommonError(error,"Something was wrong getMyPlaces");
     }
   }
 
 
-  async findOne(placeId:string,currentOwner?:User):Promise<PlaceResponseDto>{     // IF EXIST PLACE RETURN, OR THROW EXCEPTION
-    let queryUser;
-    if(currentOwner){
-       queryUser = {owner:{id:currentOwner.id}};
-    }
-    try{
-        const placeFound = await this.placeRepo.findOne({
-            where:{id:placeId,status:placeEnumStatus.ACTIVE,...queryUser},
-            relations:['images','category','booking_mode','location','city','city.country','opening_hours'],
+  async findOne(placeId: string,currentOwner?: User): Promise<PlaceResponseDto> {
+  
+    try {
+      const query = this.placeRepo
+        .createQueryBuilder('place')
+        .leftJoinAndSelect('place.images', 'image')
+        .leftJoinAndSelect('place.category', 'category')
+        .leftJoinAndSelect('place.opening_hours','open')
+        .leftJoinAndSelect('place.booking_mode', 'booking')
+        .leftJoinAndSelect('place.city', 'city')
+        .leftJoinAndSelect('city.country', 'country')
+        .leftJoinAndSelect('place.location','location')
+        .where('place.id = :id', { id: placeId })
+        .andWhere('place.status = :status', {
+          status: placeEnumStatus.ACTIVE,
         });
-      if(!placeFound){
-          throw new BadRequestException(`Place with ${placeId} : not Found`);
+  
+      if (currentOwner) {
+        query.andWhere('place.ownerId = :ownerId', {
+          ownerId: currentOwner.id,
+        });
       }
+  
+      const placeFound = await query
+        .select([
+          'place.id',
+          'place.name',
+          'place.description',
+          'place.price',
+       
+          'image.url',
+
+          'category.name',
+
+          'booking.name',
+          'booking.type',
+  
+          'city.name',
+          'country.id',
+          'country.name',
+
+          'open.open_time',
+          'open.close_time',
+          'open.day',
+
+          'location.latitude',
+          'location.longitude'
+        ])
+        .getOne();
+  
+      if (!placeFound) {
+        throw new BadRequestException(`Place with ${placeId} not found`);
+      }
+  
       return this.createPlaceResponseDto(placeFound);
-    }catch(error){
-       if(error instanceof BadRequestException){
-          throw error;
-          
-       }
-       this.logger.error(error,error.stack);
-       throw new InternalServerErrorException("Something was wrong");
+  
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+  
+      this.logger.error(error, error.stack);
+      throw new InternalServerErrorException('Something was wrong');
     }
   }
+  
 
 
   async updateBasicInformation(updatePlaceDto:UpdatePlaceDto,place_id:string,ownerPlace:User){
@@ -374,26 +458,49 @@ export class PlacesService {
   }
 
 
-
-
-  async getCalendar(place_id:string,calendarDto:CalendarAvailabityDto){
-    let { start_date, end_date } = calendarDto;
-    const start = start_date ? new Date(start_date) : new Date();
-    let end: Date;
-
-    if (end_date) {
-      end = new Date(end_date);
-    } else {
-      end = new Date(start);
-      end.setDate(start.getDate() + 7); 
+  async getCalendar(placeId: string) {
+    try {
+      const [openingHours,place] = await Promise.all([
+        this.getOpeningHoursByPlace(placeId),
+        this.findOne(placeId),
+      ]);
+      return {
+        openingHours,
+        booking_mode:place.booking_mode.name,
+      };
+    } catch (error) {
+      this.logger.error(error.message, error.stack);
+      throw new InternalServerErrorException(
+        'Error getting calendar availability',
+      );
     }
-
-    console.log("Start:", start);
-    console.log("End:", end);
-
+  }
+  
+  
+  async getReservationsByDate(place_id:string,date:string){
+     return this.reservationService.getAvailabilityDaily(place_id,date)
   }
 
+  
+  
+  async getOpeningHoursByPlace(placeId: string) {
+    return this.openingHourRepo
+      .createQueryBuilder('hours')
+      .select([
+        'hours.open_time',
+        'hours.close_time',
+        'hours.day',
+        'hours.is_active',
+      ])
+      .where('hours.place_id = :placeId', { placeId })
+      .andWhere('hours.is_active = true')
+      .orderBy('hours.open_time', 'ASC')
+      .getMany();
+  }
+  
+    
 
+ 
 
 
   private buildQueryFilterPlaces(queryParams:PaginationDto,owner?:string){
@@ -407,6 +514,7 @@ export class PlacesService {
       querySql.addSelect(['bmod.name']);
       querySql.addSelect(['cit.name']);
       querySql.addSelect(['country.name']);
+      querySql.addSelect(['cat.name']);
 
       if(queryParams.category){
         querySql.andWhere('cat.id = :idCategory',{idCategory:queryParams.category})
@@ -431,14 +539,6 @@ export class PlacesService {
 
 
 
-
-
-  private createPlaceResponseDto(placesData:Place){
-    return plainToInstance(PlaceResponseDto,placesData,{excludeExtraneousValues:true});
-  }
-
-
-
   private throwCommonError(error:any,messageError:string){
     this.logger.error(messageError,error.stack || 'trace not found on updatePlace');
      if (error instanceof BadRequestException) {
@@ -450,5 +550,13 @@ export class PlacesService {
      }
      throw new BadRequestException('Unexpected error occurred');
   }
+
+
+  private createPlaceResponseDto(placesData:Place){
+    return plainToInstance(PlaceResponseDto,placesData,{excludeExtraneousValues:true});
+  }
+
+
+
 
 }
