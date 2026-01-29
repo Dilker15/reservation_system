@@ -13,13 +13,16 @@ import { AppLoggerModule } from 'src/logger/logger.module';
 import { Location } from '../locations/entities/location.entity';
 import { LocationsModule } from 'src/locations/locations.module';
 import { ImageUploadModule } from 'src/image-upload/image-upload.module';
+import { OpeningHour } from 'src/opening-hours/entities/opening-hour.entity';
+import { ReservationModule } from 'src/reservation/reservation.module';
 
 @Module({
-  imports:[TypeOrmModule.forFeature([Place,City,PlaceImages,Category,BookingMode,Location]),
+  imports:[TypeOrmModule.forFeature([Place,City,PlaceImages,Category,BookingMode,Location,OpeningHour]),
             forwardRef(() => QueueBullModule),
             AppLoggerModule,
             LocationsModule,
             ImageUploadModule,
+            forwardRef(() => ReservationModule),
 ],
   controllers: [PlacesController],
   providers: [PlacesService,ImageLocalService],

@@ -15,6 +15,7 @@ import { UpdateLocationDto } from 'src/locations/dto/update.location.dto';
 import { AvailabilityDto } from './dto/availability.dto';
 import { ParseAndValidateJsonPipe } from 'src/common/pipes/ParseJson.pipe';
 import { CalendarAvailabityDto } from 'src/common/dtos/calendarAvailabity';
+import { GetPlaceReservationsQueryDto } from './dto/place.reservation.dto';
 
 
 
@@ -53,17 +54,17 @@ export class PlacesController {
     return this.placesService.findAll(paginationDto);
   }
 
-
-  @Public()
-  @Get(':id') //
-  async findOne(@Param('id',ParseUUIDPipe) placeId:string):Promise<PlaceResponseDto>{
-     return this.placesService.findOne(placeId);
-  }
-
+  
   @Role(Roles.OWNER)
-  @Get('/me') //
-  async getPlacesOwner(@GetUser() owner:User){
-      return this.placesService.getMyPlaces(owner);
+  @Get('me')
+  async getPlacesOwner(@GetUser() owner: User) {
+    return this.placesService.getMyPlaces(owner);
+  }
+  
+  @Public()
+  @Get(':id')
+  async findOne(@Param('id', ParseUUIDPipe) placeId: string) {
+    return this.placesService.findOne(placeId);
   }
 
 
@@ -123,17 +124,31 @@ export class PlacesController {
 
 
   @Role(Roles.OWNER)
-  @Patch(":place_id/city/")//
+  @Patch(":place_id/city")//
   updateCity(@Param('place_id',ParseUUIDPipe) place_id:string,@Body('city_id',ParseUUIDPipe) city_id:string,@GetUser() owner:User){
     return this.placesService.updateCity(place_id,city_id,owner);
   }
 
+  
 
-
-  @Get(':id/schedules')
-  getShedule(@Param('id',ParseUUIDPipe) place_id:string,@Body() calendarDto:CalendarAvailabityDto){
-     return  this.placesService.getCalendar(place_id,calendarDto);
+  @Public()
+  @Get(':id/schedules/day')
+  getShedule(@Param('id',ParseUUIDPipe) place_id:string){
+     return  this.placesService.getCalendar(place_id);
   }
+
+
+  @Public()
+  @Get(':id/reservations')
+  getPlaceReservationsByDate(
+    @Param('id') placeId: string,
+    @Query() query: GetPlaceReservationsQueryDto,
+  ) {
+    return this.placesService.getReservationsByDate(placeId, query.date);
+  }
+  
+
+
 
 
 
