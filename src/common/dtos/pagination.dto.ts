@@ -15,43 +15,11 @@ export class PaginationDto{
     limit?:number;
 
 
-
     @Type(()=>Number)
     @IsNumber()
     @IsPositive()
     @IsOptional()
     page?:number;
-
-
-
-    @IsUUID()
-    @IsOptional()
-    category?:string;
-
-
-    @IsUUID()
-    @IsOptional()
-    city?:string;
-
-
-    @IsUUID()
-    @IsOptional()
-    reservation_mode?:string;
-
-
-
-    @Type(()=>Number)
-    @IsNumber()
-    @Min(1,{message:'min price should be greater than zero'})
-    @IsOptional()
-    min_price?:number;
-
-
-    @Type(()=>Number)
-    @IsNumber()
-    @IsPositive()
-    @IsOptional()
-    max_price?:number;
 
 
 }
