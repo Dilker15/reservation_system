@@ -8,7 +8,7 @@ import { ImageUploadInterceptor } from 'src/common/interceptors/response/images.
 import { ImageLocalService } from 'src/common/helpers/imageLocalService';
 import { GetUser } from 'src/auth/decorators/getUser.decorator';
 import { User } from 'src/users/entities/user.entity';
-import { PaginationDto } from 'src/common/dtos/pagination.dto';
+import { PlaceQueryDto } from './dto/placeQuery.dto';
 import { Public } from 'src/auth/decorators/public.decorator';
 import { PlaceResponseDto } from './dto/place.response.dto';
 import { UpdateLocationDto } from 'src/locations/dto/update.location.dto';
@@ -16,6 +16,8 @@ import { AvailabilityDto } from './dto/availability.dto';
 import { ParseAndValidateJsonPipe } from 'src/common/pipes/ParseJson.pipe';
 import { CalendarAvailabityDto } from 'src/common/dtos/calendarAvailabity';
 import { GetPlaceReservationsQueryDto } from './dto/place.reservation.dto';
+import { PaginationDto } from 'src/common/dtos/pagination.dto';
+
 
 
 
@@ -37,6 +39,8 @@ export class PlacesController {
     return this.placesService.create(createPlaceDto as CreatePlaceDto,routeImages,currentUser);
   }
 
+
+
   @UseInterceptors(ImageUploadInterceptor('images'))
   @Role(Roles.OWNER)
   @Post('range')
@@ -50,7 +54,8 @@ export class PlacesController {
 
   @Public()
   @Get() //
-  findAll(@Query() paginationDto:PaginationDto) {
+  findAll(@Query() paginationDto:PlaceQueryDto) {
+
     return this.placesService.findAll(paginationDto);
   }
 

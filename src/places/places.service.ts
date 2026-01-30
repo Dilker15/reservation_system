@@ -13,7 +13,7 @@ import { placeEnumStatus } from './interfaces/interfaces';
 import { PlaceImages } from './entities/place-images.entity';
 import { AppLoggerService } from 'src/logger/logger.service';
 import { PlaceResponseDto } from './dto/place.response.dto';
-import { PaginationDto } from 'src/common/dtos/pagination.dto';
+import { PlaceQueryDto } from './dto/placeQuery.dto';
 import { plainToInstance } from 'class-transformer';
 import { UpdatePlaceDto } from './dto/update-place.dto';
 import { LocationsService } from 'src/locations/locations.service';
@@ -24,6 +24,7 @@ import { CalendarAvailabityDto } from 'src/common/dtos/calendarAvailabity';
 import { ReservationService } from 'src/reservation/reservation.service';
 import { BookingModeType} from 'src/common/Interfaces';
 import { PlaceListDto } from './dto/placeList.dto';
+import { PaginationDto } from 'src/common/dtos/pagination.dto';
 
 
 @Injectable()
@@ -114,7 +115,7 @@ export class PlacesService {
   }
 
 
-  async findAll(queryParams: PaginationDto) {
+  async findAll(queryParams: PlaceQueryDto) {
     const {limit = 10, page = 1} = queryParams;
     
     try {
@@ -154,7 +155,7 @@ export class PlacesService {
     }
   }
 
-  async getMyPlaces(owner: User,pagination: PaginationDto) {
+  async getMyPlaces(owner: User,pagination:PaginationDto) {
     const { limit = 10, page = 1 } = pagination;
     try {
       const query = this.placeRepo
@@ -515,7 +516,7 @@ export class PlacesService {
  
 
 
-  private buildQueryFilterPlaces(queryParams:PaginationDto,owner?:string){
+  private buildQueryFilterPlaces(queryParams:PlaceQueryDto,owner?:string){
       const querySql = this.placeRepo.createQueryBuilder('place')
       .select(['place.id','place.name','place.description','place.price'])
       .innerJoin("place.category",'cat')

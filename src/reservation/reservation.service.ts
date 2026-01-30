@@ -1,5 +1,5 @@
 
-import { BadRequestException, forwardRef, Inject, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, forwardRef, Inject, Injectable, InternalServerErrorException, NotFoundException, NotImplementedException } from '@nestjs/common';
 import { CreateReservationDto } from './dto/create-reservation.dto';
 import { PlacesService } from 'src/places/places.service';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -8,13 +8,22 @@ import { Repository, DataSource } from 'typeorm';
 import { User } from 'src/users/entities/user.entity';
 import { BookingStrategyFactory } from './strategies/BookingStrategyFactory';
 import { PlaceResponseDto } from 'src/places/dto/place.response.dto';
-import { BookingModeType, RESERVATION_STATUS } from 'src/common/Interfaces';
-import { cli } from 'winston/lib/winston/config';
-import { join } from 'path';
-import { Place } from 'src/places/entities/place.entity';
+import { BookingModeType, RESERVATION_STATUS, Roles } from 'src/common/Interfaces';
+import { PaginationDto } from 'src/common/dtos/pagination.dto';
+import { QueryReservationDto } from './dto/queryReservation.dto';
+
 
 @Injectable()
 export class ReservationService {
+  private readonly messageReservation: string = `Reserva creada exitosamente Por favor, procede con el pago para confirmar tu reserva.
+                  Ten en cuenta: tu reserva se mantendrá activa solo durante 10 minutos.
+                  Si el pago no se completa dentro de este tiempo, la reserva se liberará automáticamente`
+            
+  private readonly roleHandlers: Record<Roles,(user: User, query: QueryReservationDto) => Promise<any>> = {
+                  [Roles.CLIENT]: this.getAllReservationsClient.bind(this),
+                  [Roles.OWNER]: this.getAllReservationsOwner.bind(this),
+                };
+
   constructor(
     @Inject(forwardRef(() => PlacesService))
     private readonly placeService: PlacesService,
@@ -56,11 +65,8 @@ export class ReservationService {
        const saved = await repo.save(reservationEntity);
       
        return {
-         message: `Reserva creada exitosamente.
-                  Por favor, procede con el pago para confirmar tu reserva.
-                  Ten en cuenta: tu reserva se mantendrá activa solo durante 10 minutos.
-                  Si el pago no se completa dentro de este tiempo, la reserva se liberará automáticamente.`,
-         reservationId: saved.id
+          message:this.messageReservation,
+          reservationId: saved.id
        };
      });
      return transacctionCreated;
@@ -73,11 +79,16 @@ export class ReservationService {
 
 
 
+  async getReservationsList(user:User,query:QueryReservationDto){
+     const handler = this.roleHandlers[user.role];
+     if(!handler){
+        throw new BadRequestException(`Role is not available: ${user.role}`);
+     }
 
- async reservationIsPaid(reservation_id:string):Promise<boolean>{
-     const reservation = await this.reservationRepo.findOneBy({id:reservation_id,status:RESERVATION_STATUS.PAID});
-     return !!reservation;
- }
+     return handler(user,query);
+  }
+
+
 
   async findOne(id: string) {
     try{
@@ -123,7 +134,7 @@ export class ReservationService {
   }
 
 
-   async getAvailabilityDaily(placeId: string, date: string) {
+  async getAvailabilityDaily(placeId: string, date: string) {
  
     return this.dataSource
       .createQueryBuilder(Reservation, 'reservation')
@@ -149,11 +160,72 @@ export class ReservationService {
 
 
 
-  async getAllClientReservation(client:User){
-
+  private async getAllReservationsClient(client: User, query: QueryReservationDto) {
+    const { limit = 10, page = 1} = query;
+    const offset = (page - 1) * limit;
+    try {
+      const total = await this.reservationRepo
+        .createQueryBuilder('res')
+        .where('res.client_id = :clientId', { clientId: client.id })
+        .getCount();
+  
+      const items = await this.buildQueryReservationFiltersClient(query,client)
+                              .offset(offset)
+                              .limit(limit)
+                              .orderBy('res.created_on', 'DESC')
+                              .getRawMany();
+  
+      return {total,page,limit,totalPages: Math.ceil(total / limit),items,};
+    } catch (error) {
+      console.error('Error fetching client reservations:', error);
+      throw new InternalServerErrorException('Error retrieving reservations');
+    }
   }
+
   
 
+  private async getAllReservationsOwner(owner:User,query:QueryReservationDto){
+    try{
+      
+    }catch(error){
+
+    }
+  }
+
+
+  async reservationIsPaid(reservation_id:string):Promise<boolean>{
+    const reservation = await this.reservationRepo.findOneBy({id:reservation_id,status:RESERVATION_STATUS.PAID});
+    return !!reservation;
+  }
+
+
+  private buildQueryReservationFiltersClient(query:QueryReservationDto,client:User){
+     const queryBuilt = this.reservationRepo.createQueryBuilder('res')
+                                            .select([
+                                              'res.id as id',
+                                              '(res.amount * res.total_price) as total',
+                                              'res.start_time as start',
+                                              'res.end_time as end',
+                                              'res.created_on as booked_at',
+                                              'res.reservation_start_date as reservation_date',
+                                              'res.status as status',
+                                              'place.name as place_name'
+                                            ])
+                                            .innerJoin('res.place', 'place')
+                                            .where('res.client_id = :clientId', { clientId: client.id })
+    if(query.to && query.from){
+       queryBuilt.andWhere('res.reservation_start_date between :start and end',{start:query.from,end:query.to})
+    }
+    if(query.status){
+       queryBuilt.andWhere('res.status = :statuReservation',{statusReservation:query.status});
+    }
+    return queryBuilt;
+  }
+
+
+  private buildQueryReservationFiltersOwner(query:QueryReservationDto,owner:User){
+        throw new NotImplementedException("Not implemented yet");
+  }
   
   
   

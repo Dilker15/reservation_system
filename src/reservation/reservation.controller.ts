@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, ParseUUIDPipe } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, ParseUUIDPipe, Query } from '@nestjs/common';
 import { ReservationService } from './reservation.service';
 import { CreateReservationDto } from './dto/create-reservation.dto';
 import { UpdateReservationDto } from './dto/update-reservation.dto';
@@ -7,6 +7,8 @@ import { GetClient } from 'src/auth/decorators/getClient';
 import { GetUser } from 'src/auth/decorators/getUser.decorator';
 import { Role } from 'src/auth/decorators/role.decorator';
 import { Roles } from 'src/common/Interfaces';
+import { PaginationDto } from 'src/common/dtos/pagination.dto';
+import { QueryReservationDto } from './dto/queryReservation.dto';
 
 
 
@@ -23,6 +25,13 @@ export class ReservationController {
   ) {
     return this.reservationService.create(createReservationDto, client);
   
+  }
+
+
+  @Role(Roles.CLIENT,Roles.OWNER)
+  @Get()
+  getReservations(@GetUser() user:User,@Query() pagination:QueryReservationDto){
+    return this.reservationService.getReservationsList(user,pagination)
   }
 
   @Role(Roles.CLIENT)
