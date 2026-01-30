@@ -9,8 +9,8 @@ import { User } from 'src/users/entities/user.entity';
 import { BookingStrategyFactory } from './strategies/BookingStrategyFactory';
 import { PlaceResponseDto } from 'src/places/dto/place.response.dto';
 import { BookingModeType, RESERVATION_STATUS, Roles } from 'src/common/Interfaces';
-import { PaginationDto } from 'src/common/dtos/pagination.dto';
 import { QueryReservationDto } from './dto/queryReservation.dto';
+import { SelectQueryBuilder } from 'typeorm/browser';
 
 
 @Injectable()
@@ -24,18 +24,11 @@ export class ReservationService {
                   [Roles.OWNER]: this.getAllReservationsOwner.bind(this),
                 };
 
-  constructor(
-    @Inject(forwardRef(() => PlacesService))
-    private readonly placeService: PlacesService,
-
-    @InjectRepository(Reservation)
-    private readonly reservationRepo: Repository<Reservation>,
-
-    private readonly dataSource: DataSource,
-    private readonly strategyFactory: BookingStrategyFactory,
+  constructor(@Inject(forwardRef(() => PlacesService)) private readonly placeService: PlacesService,@InjectRepository(Reservation)
+              private readonly reservationRepo: Repository<Reservation>,
+              private readonly dataSource: DataSource,
+              private readonly strategyFactory: BookingStrategyFactory,
   ) {}
-
-
 
 
 
@@ -44,8 +37,6 @@ export class ReservationService {
    const type: BookingModeType = place.booking_mode.type as BookingModeType;
 
    const strategy = this.strategyFactory.getStrategy(type);
-
-
   
    strategy.validateDto(dto);
    strategy.validateBusiness(place as PlaceResponseDto, dto);
@@ -55,9 +46,7 @@ export class ReservationService {
      transacctionCreated = await this.dataSource.transaction(async (manager) => {
        await strategy.ensureAvailability(dto, manager);
 
-
        const amount = strategy.calculateAmount(dto);
-
 
        const reservationEntity = strategy.buildReservation(dto, place.id, client, amount,place.price);
        reservationEntity.status = RESERVATION_STATUS.CREATED;
@@ -84,7 +73,6 @@ export class ReservationService {
      if(!handler){
         throw new BadRequestException(`Role is not available: ${user.role}`);
      }
-
      return handler(user,query);
   }
 
@@ -136,8 +124,7 @@ export class ReservationService {
 
   async getAvailabilityDaily(placeId: string, date: string) {
  
-    return this.dataSource
-      .createQueryBuilder(Reservation, 'reservation')
+    return this.dataSource.createQueryBuilder(Reservation, 'reservation')
       .select([
         'reservation.start_time AS reservation_start_time',
         'reservation.end_time AS reservation_end_time',
@@ -160,36 +147,56 @@ export class ReservationService {
 
 
 
-  private async getAllReservationsClient(client: User, query: QueryReservationDto) {
-    const { limit = 10, page = 1} = query;
-    const offset = (page - 1) * limit;
-    try {
-      const total = await this.reservationRepo
-        .createQueryBuilder('res')
-        .where('res.client_id = :clientId', { clientId: client.id })
-        .getCount();
-  
-      const items = await this.buildQueryReservationFiltersClient(query,client)
-                              .offset(offset)
-                              .limit(limit)
-                              .orderBy('res.created_on', 'DESC')
-                              .getRawMany();
-  
-      return {total,page,limit,totalPages: Math.ceil(total / limit),items,};
-    } catch (error) {
-      console.error('Error fetching client reservations:', error);
-      throw new InternalServerErrorException('Error retrieving reservations');
-    }
+  private buildClientReservationQuery(client: User,query: QueryReservationDto): SelectQueryBuilder<Reservation> {
+    const qb = this.buildBaseReservationQuery()
+      .select([
+        'res.id as id',
+        '(res.amount * res.total_price) as total',
+        'res.start_time as start',
+        'res.end_time as end',
+        'res.created_on as booked_at',
+        'res.reservation_start_date as reservation_date',
+        'res.status as status',
+        'place.name as place_name',
+        'bm.type as mode',
+      ])
+      .where('res.client_id = :clientId', { clientId: client.id });
+
+    this.applyReservationFilters(qb, query);
+    return qb;
   }
 
-  
 
-  private async getAllReservationsOwner(owner:User,query:QueryReservationDto){
-    try{
-      
-    }catch(error){
+  private buildOwnerReservationQuery(owner: User,query: QueryReservationDto): SelectQueryBuilder<Reservation> {
+    const qb = this.buildBaseReservationQuery()
+      .innerJoin('res.user', 'client')
+      .select([
+        'res.id as id',
+        '(res.amount * res.total_price) as total',
+        'res.start_time as start',
+        'res.end_time as end',
+        'res.created_on as booked_at',
+        'res.reservation_start_date as reservation_date',
+        'res.status as status',
+        'place.name as place_name',
+        'bm.type as mode',
+        'client.name as client',
+      ])
+      .where('place.owner_id = :ownerId', { ownerId: owner.id });
 
-    }
+    this.applyReservationFilters(qb, query);
+    return qb;
+  }
+
+
+  async getAllReservationsClient(client: User,query: QueryReservationDto) {
+    const qb = this.buildClientReservationQuery(client, query);
+    return this.paginateRaw(qb, query.page, query.limit);
+  }
+
+  async getAllReservationsOwner(owner: User,query: QueryReservationDto) {
+    const qb = this.buildOwnerReservationQuery(owner, query);
+    return this.paginateRaw(qb, query.page, query.limit);
   }
 
 
@@ -197,36 +204,39 @@ export class ReservationService {
     const reservation = await this.reservationRepo.findOneBy({id:reservation_id,status:RESERVATION_STATUS.PAID});
     return !!reservation;
   }
-
-
-  private buildQueryReservationFiltersClient(query:QueryReservationDto,client:User){
-     const queryBuilt = this.reservationRepo.createQueryBuilder('res')
-                                            .select([
-                                              'res.id as id',
-                                              '(res.amount * res.total_price) as total',
-                                              'res.start_time as start',
-                                              'res.end_time as end',
-                                              'res.created_on as booked_at',
-                                              'res.reservation_start_date as reservation_date',
-                                              'res.status as status',
-                                              'place.name as place_name'
-                                            ])
-                                            .innerJoin('res.place', 'place')
-                                            .where('res.client_id = :clientId', { clientId: client.id })
-    if(query.to && query.from){
-       queryBuilt.andWhere('res.reservation_start_date between :start and end',{start:query.from,end:query.to})
-    }
-    if(query.status){
-       queryBuilt.andWhere('res.status = :statuReservation',{statusReservation:query.status});
-    }
-    return queryBuilt;
-  }
-
-
-  private buildQueryReservationFiltersOwner(query:QueryReservationDto,owner:User){
-        throw new NotImplementedException("Not implemented yet");
-  }
   
   
+  private applyReservationFilters(qb: SelectQueryBuilder<Reservation>,query: QueryReservationDto) {
+    if (query.from && query.to) {
+      qb.andWhere('res.reservation_start_date BETWEEN :start AND :end',{start: query.from,end: query.to});
+    }
+    if (query.status) {
+      qb.andWhere('res.status = :status', {status: query.status});
+    }
+  }
+
+  private buildBaseReservationQuery(): SelectQueryBuilder<Reservation> {
+    return this.reservationRepo.createQueryBuilder('res')
+          .innerJoin('res.place', 'place')
+          .innerJoin('place.booking_mode', 'bm');
+  }
+
+  private async paginateRaw<T>(qb: SelectQueryBuilder<any>,page = 1,limit = 10,orderBy = 'res.created_on'): Promise<{
+    items: T[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  }> {
+    const offset = (page - 1) * limit;
+    const total = await qb.clone().select('res.id').getCount();
+
+    const items = await qb.orderBy(orderBy, 'DESC')
+                .offset(offset)
+                .limit(limit)
+                .getRawMany<T>();
+
+    return {items,total,page,limit,totalPages: Math.ceil(total / limit)}
+  } 
   
  }
