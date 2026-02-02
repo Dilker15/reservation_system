@@ -11,6 +11,7 @@ import { ConfigModule } from '@nestjs/config';
 import { TokenEncrytionModule } from 'src/token-encrytion/token-encrytion.module';
 import { OAuthStates } from './entities/oauth_states.entity';
 import { StatesService } from './strategies/states.service';
+import { BcryptService } from 'src/common/helpers/bcryp';
 
 @Module({
   imports:[
@@ -19,6 +20,6 @@ import { StatesService } from './strategies/states.service';
     TokenEncrytionModule,
   ],
   controllers: [PaymentAccountsController],
-  providers: [PaymentAccountsService,OAuthFactory,MercadoPagoOAuthStrategy,StripeOAuthStrategy,StatesService],
+  providers: [PaymentAccountsService,OAuthFactory,MercadoPagoOAuthStrategy,StripeOAuthStrategy,StatesService,BcryptService],
 })
 export class PaymentAccountsModule {}
