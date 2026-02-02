@@ -10,7 +10,6 @@ export const GetClient = createParamDecorator((data:string|undefined,ctx:Executi
     if(!user )
         throw new InternalServerErrorException('User not found OR  jtw(error)');
 
-    console.log(user);
     if(!user.role.includes(Roles.CLIENT))
         throw new BadRequestException("Invalid Role for this action");
 
