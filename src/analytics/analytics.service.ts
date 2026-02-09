@@ -22,8 +22,8 @@ export class AnalyticsService {
   constructor(private readonly dataSource: DataSource) {}
 
 
-  async getDashboard(period: AnalyticsPeriod,owner: User): Promise<{revenuesByPlace: RevenueByPlace[];topPlaces: ReservationStatsByPlace[];bottomPlaces: ReservationStatsByPlace[]}> {
-    const [revenues, topPlaces, bottomPlaces] = await Promise.all([
+  async getDashboard(period: AnalyticsPeriod,owner: User): Promise<{revenuesByPlace: RevenueByPlace[];topPlaces: ReservationStatsByPlace[];bottomPlaces: ReservationStatsByPlace[],summary:any}> {
+    const [revenues, topPlaces, bottomPlaces,summary] = await Promise.all([
       this.getRevenueByPlaces(period, owner).catch((err) => {
         console.error(`Error fetching revenues:`, err);
         return [];
@@ -36,9 +36,13 @@ export class AnalyticsService {
         console.error(`Error fetching bottom reservations:`, err);
         return [];
       }),
+      this.getReservationsSummary(owner).catch((err)=>{
+        console.error(`Error fetching bottom reservations:`, err);
+        return [];
+      })
     ]);
 
-    return { revenuesByPlace: revenues, topPlaces, bottomPlaces };
+    return { revenuesByPlace: revenues, topPlaces, bottomPlaces ,summary};
   }
 
 
@@ -70,6 +74,42 @@ export class AnalyticsService {
       throw new Error(`Failed to fetch revenue for owner ${owner.id}`);
     }
   }
+
+
+  async getReservationsSummary(owner: User) {
+    try {
+      const data = await this.dataSource
+        .createQueryBuilder()
+        .select([
+          `SUM(CASE WHEN res.status IN (:...validStatuses) THEN 1 ELSE 0 END) AS total_valid`,
+          `SUM(CASE WHEN res.status = :cancelled THEN 1 ELSE 0 END) AS total_cancelled`,
+          `SUM(CASE WHEN res.status = :expired THEN 1 ELSE 0 END) AS total_expired`,
+        ])
+        .from('reservations', 'res')
+        .innerJoin('places', 'pla', 'res.place_id = pla.id')
+        .innerJoin('users', 'own', 'pla.owner_id = own.id')
+        .where('own.id = :ownerId', { ownerId: owner.id })
+        .andWhere('res.status <> :created', {
+          created: RESERVATION_STATUS.CREATED,
+        })
+        .setParameters({
+          validStatuses: [RESERVATION_STATUS.PAID,RESERVATION_STATUS.IN_PROGRESS,RESERVATION_STATUS.COMPLETED],
+          cancelled: RESERVATION_STATUS.CANCELLED,
+          expired: RESERVATION_STATUS.EXPIRED,
+        })
+        .getRawOne();
+
+      return {
+        totalValid: Number(data.total_valid),
+        totalCancelled: Number(data.total_cancelled),
+        totalExpired: Number(data.total_expired),
+      };
+    } catch (error) {
+      console.error('Error fetching reservations summary:', error);
+      throw new Error(`Failed to fetch reservations summary for owner ${owner.id}`);
+    }
+  }
+
 
 
   async getTopReservations(owner: User,limit = 5): Promise<ReservationStatsByPlace[]> {
@@ -122,4 +162,6 @@ export class AnalyticsService {
   private formatDateForDB(date: Date): string {
     return date.toISOString().split('T')[0]; 
   }
+
+
 }
