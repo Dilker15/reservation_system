@@ -33,11 +33,17 @@ export class AnalyticsController {
     return this.analyticsService.getBottomReservations(owner);
   }
 
+  @Get('summary')
+  getSummary(@GetUser() owner:User){
+    return this.analyticsService.getReservationsSummary(owner);
+  }
+
 
   @Get('dashboard')
   getDashboard(@Query('period') period: AnalyticsPeriod = AnalyticsPeriod.LAST_30_DAYS, @GetUser() owner:User){
     return this.analyticsService.getDashboard(period,owner);
   }
+
 
 
 }
