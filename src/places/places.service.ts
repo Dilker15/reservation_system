@@ -13,7 +13,7 @@ import { placeEnumStatus } from './interfaces/interfaces';
 import { PlaceImages } from './entities/place-images.entity';
 import { AppLoggerService } from 'src/logger/logger.service';
 import { PlaceResponseDto } from './dto/place.response.dto';
-import { PlaceQueryDto } from './dto/placeQuery.dto';
+import { PlaceOwnerQueryDto, PlaceQueryDto } from './dto/placeQuery.dto';
 import { plainToInstance } from 'class-transformer';
 import { UpdatePlaceDto } from './dto/update-place.dto';
 import { LocationsService } from 'src/locations/locations.service';
@@ -155,14 +155,25 @@ export class PlacesService {
     }
   }
 
-  async getMyPlaces(owner: User,pagination:PaginationDto) {
-    const { limit = 10, page = 1 } = pagination;
+  async getMyPlaces(owner: User, pagination: PlaceOwnerQueryDto) {
+    const { limit = 10, page = 1, status, name } = pagination;
     try {
       const query = this.placeRepo
         .createQueryBuilder('place')
         .leftJoin('place.booking_mode', 'booking_mode')
         .leftJoin('place.category', 'category')
-        .where('place.owner_id = :ownerId', { ownerId: owner.id })
+        .where('place.owner_id = :ownerId', { ownerId: owner.id });
+      if (status) {
+        query.andWhere('place.status = :status', { status });
+      }
+
+      if (name) {
+        query.andWhere('LOWER(place.name) LIKE LOWER(:name)', { 
+          name: `%${name}%` 
+        });
+      }
+      const total = await query.clone().getCount();
+      query
         .select([
           'place.id AS id',
           'place.name AS name',
@@ -176,17 +187,11 @@ export class PlacesService {
         .limit(limit);
 
       const data: PlaceListDto[] = await query.getRawMany();
-      const total = await query.clone()
-                              .offset(undefined)
-                              .limit(undefined)
-                              .getCount();
-
-      return {total,page,limit,items:data};
+      return { total, page, limit, items: data };
     } catch (error) {
       this.throwCommonError(error, 'Something was wrong getMyPlaces');
     }
-}
-
+  }
 
 
   async findOne(placeId: string,currentOwner?: User): Promise<PlaceResponseDto> {
