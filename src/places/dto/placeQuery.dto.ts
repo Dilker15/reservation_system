@@ -1,6 +1,7 @@
 import { Type } from "class-transformer";
-import { IsNumber, IsOptional, IsPositive, IsUUID, Min } from "class-validator";
+import { IsEnum, IsNotEmpty, IsNumber, IsOptional, IsPositive, IsString, IsUUID, Min } from "class-validator";
 import { PaginationDto } from "src/common/dtos/pagination.dto";
+import { placeEnumStatus } from "../interfaces/interfaces";
 
 
 
@@ -36,4 +37,18 @@ export class PlaceQueryDto extends PaginationDto{
     @IsOptional()
     max_price?:number;
 
+}
+
+
+export class PlaceOwnerQueryDto extends PaginationDto{
+
+    @IsOptional()
+    @IsEnum(placeEnumStatus,{message:`status must be a valid placeEnumStatus value`})
+    status?:placeEnumStatus;
+
+
+    @IsOptional()
+    @IsString()
+    @IsNotEmpty()
+    name?:string;
 }

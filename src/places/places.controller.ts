@@ -8,7 +8,7 @@ import { ImageUploadInterceptor } from 'src/common/interceptors/response/images.
 import { ImageLocalService } from 'src/common/helpers/imageLocalService';
 import { GetUser } from 'src/auth/decorators/getUser.decorator';
 import { User } from 'src/users/entities/user.entity';
-import { PlaceQueryDto } from './dto/placeQuery.dto';
+import { PlaceOwnerQueryDto, PlaceQueryDto } from './dto/placeQuery.dto';
 import { Public } from 'src/auth/decorators/public.decorator';
 import { PlaceResponseDto } from './dto/place.response.dto';
 import { UpdateLocationDto } from 'src/locations/dto/update.location.dto';
@@ -62,7 +62,7 @@ export class PlacesController {
   
   @Role(Roles.OWNER)
   @Get('me')
-  async getPlacesOwner(@GetUser() owner: User,@Query() pagination:PaginationDto) {
+  async getPlacesOwner(@GetUser() owner: User,@Query() pagination:PlaceOwnerQueryDto) {
     return this.placesService.getMyPlaces(owner,pagination);
   }
   
