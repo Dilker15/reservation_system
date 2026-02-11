@@ -45,5 +45,11 @@ export class ReservationController {
   }
 
 
+  @Role(Roles.OWNER,Roles.CLIENT)
+  @Patch(':id/cancel')
+  cancelReservation(@Param('id',ParseUUIDPipe) id_reservation:string,@GetUser() currentUser:User){
+    return this.reservationService.cancelReservation(id_reservation,currentUser);
+  }
+
   
 }
