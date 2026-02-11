@@ -124,7 +124,7 @@ export class ReservationService {
       return reservation;
     }catch(error){
       console.log("ERROR GET PAYMENT : ",error);
-      throw new error;
+      throw new InternalServerErrorException('Internal server error while list reservations.');
     }
     
   }
@@ -235,7 +235,7 @@ export class ReservationService {
       return reservationFound;
     }catch(error){
         console.log("error getReservationClient :",error);
-        throw error;
+        throw new InternalServerErrorException('Internal server error while get reservation.');
     }
   }
 
@@ -275,6 +275,28 @@ export class ReservationService {
   }
 
 
+  async cancelReservation(reservation_id:string,currentUser:User){
+    try{ 
+        const reservationFound = await this.reservationRepo.findOneBy({id:reservation_id});
+        if(!reservationFound){
+          console.log(`Reservation with id :${reservation_id} not found`);
+          throw new BadRequestException(`Reservation not found`);
+        }
+        if(reservationFound.status!=RESERVATION_STATUS.CREATED){
+           throw new BadRequestException('Reservations can not change status');
+        }
+        reservationFound.status =  RESERVATION_STATUS.CANCELLED;
+        const updatedReservation = await this.reservationRepo.save(reservationFound);
+        return {
+           succes:true
+        };
+    }catch(error){
+        console.log("error on cancel reservation :",error);
+        throw error;
+    }
+  }
+
+
 
   async getAllReservationsClient(client: User,query: QueryReservationDto) {
     const qb = this.buildClientReservationQuery(client, query);
@@ -307,7 +329,7 @@ export class ReservationService {
   private buildBaseReservationQuery(): SelectQueryBuilder<Reservation> {
     return this.reservationRepo.createQueryBuilder('res')
           .innerJoin('res.place', 'place')
-          .innerJoin('place.booking_mode', 'bm');
+          .innerJoin('place.booking_mode', 'bm')
   }
 
   private async paginateRaw<T>(qb: SelectQueryBuilder<any>,page = 1,limit = 10,orderBy = 'res.created_on'): Promise<{
