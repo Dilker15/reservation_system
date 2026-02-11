@@ -24,6 +24,12 @@ export class ReservationService {
                   [Roles.OWNER]: this.getAllReservationsOwner.bind(this),
                 };
 
+
+  private readonly roleHandlerReservaionById:Record<Roles,(user: User,reseravtion_id:string) => Promise<any>> = {
+                  [Roles.CLIENT]: this.getReservationByIdClient.bind(this),
+                  [Roles.OWNER]: this.getReservationByIdOwner.bind(this),
+  };
+  
   constructor(@Inject(forwardRef(() => PlacesService)) private readonly placeService: PlacesService,@InjectRepository(Reservation)
               private readonly reservationRepo: Repository<Reservation>,
               private readonly dataSource: DataSource,
@@ -77,49 +83,61 @@ export class ReservationService {
   }
 
 
-
-  async findOne(id: string) {
+  async getPaymentInfo(reservationId: string, user: User) {
     try{
-      const reservation = await this.reservationRepo
-      .createQueryBuilder("r")
-      .leftJoin("r.place", "p")
-      .leftJoin("p.images", "pi")
-      .leftJoin("p.owner", "o")
-      .leftJoin("o.payment_accounts", "pa")
-
-      .select([
-        "r.id",
-        "r.status",
-        "r.reservation_start_date",
-        "r.start_time",
-        "r.end_time",
-        "r.total_price",
-        "r.amount",
-
-        
-        "p.id",
-        "p.name",
-        "p.address",
-        "p.price",
-        "p.description",
-
-        "pi.url",
-
-        "o.id",
-
-        "pa.id",
-        "pa.provider",
-        "pa.status",
-      ])
-      .where("r.id = :id", { id })
-      .getOne();
+        const reservation = await this.reservationRepo
+        .createQueryBuilder("r")
+        .leftJoin("r.place", "p")
+        .leftJoin("p.images", "pi")
+        .leftJoin("p.owner", "o")
+        .leftJoin("o.payment_accounts", "pa")
+        .select([
+          "r.id",
+          "r.status",
+          "r.reservation_start_date",
+          "r.start_time",
+          "r.end_time",
+          "r.total_price",
+          "r.amount",
+    
+          "p.id",
+          "p.name",
+          "p.address",
+          "p.price",
+          "p.description",
+    
+          "pi.url",
+    
+          "o.id",
+    
+          "pa.id",
+          "pa.provider",
+          "pa.status",
+        ])
+        .where("r.id = :reservationId", { reservationId })
+        .andWhere("r.client_id = :clientId", { clientId: user.id }) 
+        .getOne();
+    
+      if (!reservation) {
+        throw new NotFoundException("Reservation not found");
+      }
       return reservation;
     }catch(error){
-        throw new NotFoundException(`Reservation not found with id: ${id}`);
-    
+      console.log("ERROR GET PAYMENT : ",error);
+      throw new InternalServerErrorException('Internal server error while list reservations.');
     }
- 
+    
   }
+
+
+   async getReservationById(reservation_id:string,currentUser:User){
+       const handlerById = this.roleHandlerReservaionById[currentUser.role];
+       if(!handlerById){
+         throw new BadRequestException(`Role is not available: ${currentUser.role}`);
+       }
+       return handlerById(currentUser,reservation_id);
+   }
+  
 
 
   async getAvailabilityDaily(placeId: string, date: string) {
@@ -133,14 +151,9 @@ export class ReservationService {
       ])
       .where('reservation.place_id = :placeId', { placeId })
       .andWhere('reservation.status IN (:...statuses)', {
-        statuses: [
-          RESERVATION_STATUS.CREATED,
-          RESERVATION_STATUS.PAID,
-        ],
+        statuses: [RESERVATION_STATUS.CREATED,RESERVATION_STATUS.PAID],
       })
-      .andWhere('reservation.reservation_start_date = :date', {
-        date,
-      })
+      .andWhere('reservation.reservation_start_date = :date', {date})
       .orderBy('reservation.start_time', 'ASC')
       .getRawMany();
   }
@@ -189,6 +202,102 @@ export class ReservationService {
   }
 
 
+   
+  async getReservationByIdClient(client:User,reservation_id:string){
+    try{
+      const reservationFound = await this.reservationRepo
+        .createQueryBuilder("r")
+        .leftJoin("r.place", "p")
+        .leftJoin("p.images", "pi")
+        .select([
+          "r.id",
+          "r.status",
+          "r.reservation_start_date",
+          "r.start_time",
+          "r.end_time",
+          "r.total_price",
+          "r.amount",
+    
+          "p.id",
+          "p.name",
+          "p.address",
+          "p.price",
+          "p.description",
+
+          "pi.url",
+        ])
+        .where("r.id = :reservationId", { reservationId: reservation_id })
+        .andWhere("r.client_id = :clientId", { clientId: client.id })
+        .getOne();  
+      if(!reservationFound)
+        throw new BadRequestException("Rervation not found");
+      
+      return reservationFound;
+    }catch(error){
+        console.log("error getReservationClient :",error);
+        throw new InternalServerErrorException('Internal server error while get reservation.');
+    }
+  }
+
+
+  async getReservationByIdOwner(owner:User,reservation_id:string){
+    try{
+      const reservationFound = await this.reservationRepo
+        .createQueryBuilder("r")
+        .leftJoin("r.place", "p")
+        .innerJoin("p.owner",'ow')
+        .select([
+          "r.id",
+          "r.status",
+          "r.reservation_start_date",
+          "r.start_time",
+          "r.end_time",
+          "r.total_price",
+          "r.amount",
+    
+          "p.id",
+          "p.name",
+          "p.address",
+          "p.price",
+          "p.description",
+        ])
+        .where("r.id = :reservationId", { reservationId: reservation_id })
+        .andWhere("ow.id = :ownerId", { ownerId:owner.id })
+        .getOne();  
+      if(!reservationFound)
+        throw new BadRequestException("Rervation not found");
+      
+      return reservationFound;
+    }catch(error){
+        console.log("erro getReservationClient :",error);
+        throw error;
+    }
+  }
+
+
+  async cancelReservation(reservation_id:string,currentUser:User){
+    try{ 
+        const reservationFound = await this.reservationRepo.findOneBy({id:reservation_id});
+        if(!reservationFound){
+          console.log(`Reservation with id :${reservation_id} not found`);
+          throw new BadRequestException(`Reservation not found`);
+        }
+        if(reservationFound.status!=RESERVATION_STATUS.CREATED){
+           throw new BadRequestException('Reservations can not change status');
+        }
+        reservationFound.status =  RESERVATION_STATUS.CANCELLED;
+        const updatedReservation = await this.reservationRepo.save(reservationFound);
+        return {
+           succes:true
+        };
+    }catch(error){
+        console.log("error on cancel reservation :",error);
+        throw error;
+    }
+  }
+
+
+
   async getAllReservationsClient(client: User,query: QueryReservationDto) {
     const qb = this.buildClientReservationQuery(client, query);
     return this.paginateRaw(qb, query.page, query.limit);
@@ -198,6 +307,8 @@ export class ReservationService {
     const qb = this.buildOwnerReservationQuery(owner, query);
     return this.paginateRaw(qb, query.page, query.limit);
   }
+
+ 
 
 
   async reservationIsPaid(reservation_id:string):Promise<boolean>{
@@ -218,7 +329,7 @@ export class ReservationService {
   private buildBaseReservationQuery(): SelectQueryBuilder<Reservation> {
     return this.reservationRepo.createQueryBuilder('res')
           .innerJoin('res.place', 'place')
-          .innerJoin('place.booking_mode', 'bm');
+          .innerJoin('place.booking_mode', 'bm')
   }
 
   private async paginateRaw<T>(qb: SelectQueryBuilder<any>,page = 1,limit = 10,orderBy = 'res.created_on'): Promise<{

@@ -20,17 +20,17 @@ export class MailsProcessor extends WorkerHost{
     }
 
     async process(job: Job, token?: string): Promise<any> {
-        const {to,data,notification_type} = job.data.data;
+        const {data,notification_type} = job.data;
         
         switch(notification_type){
             case EMAIL_TYPE.VERIFICATION_CODE:
-                await this.emailService.sendEmailVerificationCode(to,data.code);
+                await this.emailService.sendEmailVerificationCode(data.to,data.data.code);
                 return;
             case EMAIL_TYPE.RESERVATION_CONFIRM:
-                await this.emailService.sendReservationEmailClient(to,data);
+                await this.emailService.sendReservationEmailClient(data.to,data);
                return;
             case EMAIL_TYPE.ADMIN_CONFIRM:
-                await this.emailService.sendReservationEmailAdmin(to,data);
+                await this.emailService.sendReservationEmailAdmin(data.to,data);
                return;
             default:
                 this.logger.warn("EMAIL TYPE doest not exist :" +job.data.notification_type);
