@@ -8,6 +8,8 @@ import { placeEnumStatus } from "../interfaces/interfaces";
 import { Location } from "../../locations/entities/location.entity";
 import { OpeningHour } from "src/opening-hours/entities/opening-hour.entity";
 import { Reservation } from "src/reservation/entities/reservation.entity";
+import { Amenity } from "src/amenities/entities/amenity.entity";
+import { AmenitiesPlace } from "src/amenities/entities/amanities_place.entity";
 
 @Entity({name:'places'})
 export class Place {
@@ -32,6 +34,23 @@ export class Place {
     @Column({name:'price',type:'float'})
     price:number;
 
+    @Column({ name: 'max_guests', type: 'int', nullable: false })
+    max_guests: number;
+
+
+
+    @Column({ name: 'bedrooms', type: 'int', nullable: true })
+    bedrooms: number;
+
+
+    @Column({ name: 'bathrooms', type: 'int', nullable: true })
+    bathrooms: number;
+
+
+
+    @Column({ name: 'size_m2', type: 'int', nullable: true })
+    size_m2: number;
+
 
     @OneToOne(()=>Location,(location)=>location.place,{eager:true,cascade:true})
     location:Location;
@@ -39,6 +58,8 @@ export class Place {
 
     @OneToMany(()=>OpeningHour,(op)=>op.place,{cascade:true})
     opening_hours:OpeningHour[];
+
+    
 
 
     @ManyToOne(()=>City,(city)=>city.places)
@@ -66,12 +87,18 @@ export class Place {
     images:PlaceImages[];
 
 
+
     @OneToMany(()=>Reservation,(res)=>res.place)
     reservations:Reservation[];
 
 
+    @OneToMany(() => AmenitiesPlace, ap => ap.place, { cascade: true })
+    amenities: AmenitiesPlace[];
+
+
     @Column({name:'status',enum:placeEnumStatus,default:placeEnumStatus.PROCESSING})
     status:placeEnumStatus;
+
 
 
     @CreateDateColumn({ type: 'timestamp' })

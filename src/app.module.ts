@@ -20,6 +20,7 @@ import { PaymentMpModule } from './payment-mp/payment-mp.module';
 import { PaymentAccountsModule } from './payment_accounts/payment_accounts.module';
 import { TokenEncrytionModule } from './token-encrytion/token-encrytion.module';
 import { AnalyticsModule } from './analytics/analytics.module';
+import { AmenitiesModule } from './amenities/amenities.module';
 
 
 @Module({
@@ -69,6 +70,7 @@ import { AnalyticsModule } from './analytics/analytics.module';
     PaymentAccountsModule,
     TokenEncrytionModule,
     AnalyticsModule,
+    AmenitiesModule,
 
   ],
   controllers: [AppController],
