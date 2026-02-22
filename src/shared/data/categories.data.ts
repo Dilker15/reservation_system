@@ -6,24 +6,32 @@ import { Category } from "src/categories/entities/category.entity";
 
 const categories: Partial<Category>[] = [
   {
-    name: 'Coworking',
-    description: 'Shared spaces for working comfortably and flexibly',
+    name: 'Cabaña',
+    description: 'Espacios acogedores en la naturaleza, ideales para descansar y desconectarse del día a día',
   },
   {
-    name: 'Sports Court',
-    description: 'Sports courts available for rent by the hour or for events',
+    name: 'Casa de Campo',
+    description: 'Casas amplias en entornos rurales, perfectas para familias o grupos que buscan tranquilidad',
   },
   {
-    name: 'Event Hall',
-    description: 'Halls for meetings, parties, or corporate events',
+    name: 'Chalet',
+    description: 'Alojamientos de estilo montañés con ambientes cálidos y vistas espectaculares',
   },
   {
-    name: 'Resort',
-    description: 'Recreational areas with access to pool, river, or beach',
+    name: 'Domo',
+    description: 'Estructuras geodésicas únicas que ofrecen una experiencia de camping con todo el confort',
   },
   {
-    name: 'Training Room',
-    description: 'Spaces equipped for courses, workshops, or seminars',
+    name: 'Tiny House',
+    description: 'Casas pequeñas y funcionales diseñadas para una experiencia minimalista y sostenible',
+  },
+  {
+    name: 'Casa en Árbol',
+    description: 'Alojamientos elevados entre los árboles para una experiencia mágica e inigualable',
+  },
+  {
+    name: 'Estancia',
+    description: 'Grandes propiedades rurales con actividades al aire libre, ideal para grupos y familias',
   },
 ]
 

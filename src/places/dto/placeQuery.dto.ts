@@ -37,6 +37,22 @@ export class PlaceQueryDto extends PaginationDto{
     @IsOptional()
     max_price?:number;
 
+
+
+    @Type(()=>Number)
+    @IsNumber()
+    @IsPositive()
+    @IsOptional()
+    max_guests?:number;
+
+
+
+    @Type(()=>Number)
+    @IsNumber()
+    @IsPositive()
+    @IsOptional()
+    bedrooms?:number;
+
 }
 
 
