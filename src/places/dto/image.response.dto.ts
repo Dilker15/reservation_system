@@ -1,6 +1,6 @@
 
 
-import { Expose } from 'class-transformer';
+import { Expose, Type } from 'class-transformer';
 
 export class ImageResponseDto {
   @Expose()
@@ -13,4 +13,17 @@ export class ImageResponseDto {
   url: string;
 
   
+}
+
+
+export class AmenityNameDto {
+  @Expose()
+  name: string;
+}
+
+export class AmenitiesResponseDto {
+
+  @Expose()
+  @Type(() => AmenityNameDto)
+  amenity: AmenityNameDto;
 }

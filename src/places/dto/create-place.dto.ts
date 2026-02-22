@@ -4,9 +4,10 @@ import {
   IsUUID, 
   ValidateNested, 
   IsArray,
-  ArrayUnique
+  ArrayUnique,
+  IsOptional
 } from 'class-validator';
-import { Transform, Type } from 'class-transformer';
+import {Type } from 'class-transformer';
 import { AvailabilityDto } from './availability.dto';
 
 export class CreatePlaceDto {
@@ -57,4 +58,35 @@ export class CreatePlaceDto {
 
   @IsUUID()
   category_id: string;
+
+
+  @Type(() => Number)
+  @IsNumber()
+  max_guests: number;
+  
+  
+  
+  @Type(() => Number)
+  @IsNumber()
+  bedrooms: number;
+  
+  
+  @Type(() => Number)
+  @IsNumber()
+  bathrooms: number;
+  
+  
+  
+  @Type(() => Number)
+  @IsNumber()
+  size_m2: number;
+
+
+  @IsOptional()
+  @IsArray()
+  @ArrayUnique()
+  @IsUUID('4', { each: true })
+  amenity_ids?: string[];
+
+  
 }

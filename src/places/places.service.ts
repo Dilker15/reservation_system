@@ -85,11 +85,15 @@ export class PlacesService {
         city: cityData,
         booking_mode: bookingData,
         category: categoryData,
+        
         owner: user,
         location: {
           latitude: createPlaceDto.latitude,
           longitude: createPlaceDto.longitude,
-        },     
+        },        
+        amenities: createPlaceDto.amenity_ids?.map(id => ({
+          amenity: { id }
+        })),  
         ...(isHourly && {
           opening_hours: createPlaceDto.opening_hours.map(h => ({
             ...new OpeningHour(),
@@ -204,6 +208,8 @@ export class PlacesService {
         .leftJoinAndSelect('place.opening_hours','open')
         .leftJoinAndSelect('place.booking_mode', 'booking')
         .leftJoinAndSelect('place.city', 'city')
+        .leftJoinAndSelect('place.amenities','amp')
+        .leftJoinAndSelect('amp.amenity','ameni')
         .leftJoinAndSelect('city.country', 'country')
         .leftJoinAndSelect('place.location','location')
         .where('place.id = :id', { id: placeId })
@@ -223,7 +229,10 @@ export class PlacesService {
           'place.name',
           'place.description',
           'place.price',
-       
+          'place.max_guests',
+          'place.bedrooms',
+          'place.bathrooms',
+          'place.size_m2',
           'image.url',
 
           'category.name',
@@ -240,7 +249,11 @@ export class PlacesService {
           'open.day',
 
           'location.latitude',
-          'location.longitude'
+          'location.longitude',
+          
+          'amp.id',
+          'ameni.id',
+          'ameni.name',
         ])
         .getOne();
   
@@ -523,7 +536,7 @@ export class PlacesService {
 
   private buildQueryFilterPlaces(queryParams:PlaceQueryDto,owner?:string){
       const querySql = this.placeRepo.createQueryBuilder('place')
-      .select(['place.id','place.name','place.description','place.price'])
+      .select(['place.id','place.name','place.description','place.price','place.max_guests','place.size_m2','place.bedrooms','place.bathrooms'])
       .innerJoin("place.category",'cat')
       .innerJoin("place.city","cit")
       .innerJoin('cit.country', 'country')
@@ -548,7 +561,13 @@ export class PlacesService {
         querySql.andWhere("place.price >= :minPrice",{minPrice:queryParams.min_price});
       }
       if(queryParams.max_price){
-        querySql.andWhere("place.price <= :maxPrice",{maxPrice:queryParams.max_price})
+        querySql.andWhere("place.price <= :maxPrice",{maxPrice:queryParams.max_price});
+      }
+      if(Number(queryParams.max_guests) > 0){
+        querySql.andWhere('place.max_guests >= :guests',{guests:queryParams.max_guests});
+      }
+      if(Number(queryParams.bedrooms) > 0){
+        querySql.andWhere('place.bedrooms >= :bed',{bed:queryParams.bedrooms});
       }
       
       querySql.andWhere('place.status = :myStatus',{myStatus:'active'});

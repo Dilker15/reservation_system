@@ -3,7 +3,7 @@
 
 
 import { ApiProperty } from '@nestjs/swagger';
-import { ImageResponseDto } from './image.response.dto';
+import { AmenitiesResponseDto, ImageResponseDto } from './image.response.dto';
 import { Expose, Type } from 'class-transformer';
 import { CategoryResponseDto } from 'src/categories/dto/category-response.dto';
 import { BookingModeResponseDto } from 'src/booking-mode/dto/booking-mode-response.dto';
@@ -32,6 +32,19 @@ export class PlaceResponseDto {
   price: number;
 
   @Expose()
+  max_guests: number;
+
+
+  @Expose()
+  size_m2: number;
+
+  @Expose()
+  bathrooms: number;
+
+  @Expose()
+  bedrooms: number;
+
+  @Expose()
   @Type(()=>LocationResponseDto)
   location:LocationResponseDto;
 
@@ -58,6 +71,10 @@ export class PlaceResponseDto {
   @Type(()=>CityResponseDto)
   city:CityResponseDto;
 
+
+  @Expose()
+  @Type(()=>AmenitiesResponseDto)
+  amenities:AmenitiesResponseDto[];
 
 }
 
