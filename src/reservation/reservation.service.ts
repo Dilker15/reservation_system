@@ -8,7 +8,7 @@ import { Repository, DataSource } from 'typeorm';
 import { User } from 'src/users/entities/user.entity';
 import { BookingStrategyFactory } from './strategies/BookingStrategyFactory';
 import { PlaceResponseDto } from 'src/places/dto/place.response.dto';
-import { BookingModeType, RESERVATION_STATUS, Roles } from 'src/common/Interfaces';
+import { BookingModeType, PAYMENTS_STATUS, RESERVATION_STATUS, Roles } from 'src/common/Interfaces';
 import { QueryReservationDto } from './dto/queryReservation.dto';
 import { SelectQueryBuilder } from 'typeorm/browser';
 
@@ -183,6 +183,12 @@ export class ReservationService {
   private buildOwnerReservationQuery(owner: User,query: QueryReservationDto): SelectQueryBuilder<Reservation> {
     const qb = this.buildBaseReservationQuery()
       .innerJoin('res.user', 'client')
+      .leftJoin(
+        'res.payment_intents',
+        'payments',
+        'payments.status = :paidStatus',
+        { paidStatus: PAYMENTS_STATUS.PAID }
+      )
       .select([
         'res.id as id',
         '(res.amount * res.total_price) as total',
@@ -194,6 +200,7 @@ export class ReservationService {
         'place.name as place_name',
         'bm.type as mode',
         'client.name as client',
+        'payments.provider as method',
       ])
       .where('place.owner_id = :ownerId', { ownerId: owner.id });
 
@@ -346,7 +353,6 @@ export class ReservationService {
                 .offset(offset)
                 .limit(limit)
                 .getRawMany<T>();
-
     return {items,total,page,limit,totalPages: Math.ceil(total / limit)}
   } 
   
