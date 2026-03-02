@@ -41,9 +41,8 @@ export class ReservationService {
  async create(dto: CreateReservationDto, client: User) {
    const place = await this.placeService.findOne(dto.place_id);
    const type: BookingModeType = place.booking_mode.type as BookingModeType;
-
+   
    const strategy = this.strategyFactory.getStrategy(type);
-  
    strategy.validateDto(dto);
    strategy.validateBusiness(place as PlaceResponseDto, dto);
 
@@ -220,6 +219,7 @@ export class ReservationService {
           "r.id",
           "r.status",
           "r.reservation_start_date",
+          "r.reservation_end_date",
           "r.start_time",
           "r.end_time",
           "r.total_price",
@@ -257,6 +257,7 @@ export class ReservationService {
           "r.id",
           "r.status",
           "r.reservation_start_date",
+          "r.reservation_end_date",
           "r.start_time",
           "r.end_time",
           "r.total_price",
