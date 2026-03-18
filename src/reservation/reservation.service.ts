@@ -11,6 +11,7 @@ import { PlaceResponseDto } from 'src/places/dto/place.response.dto';
 import { BookingModeType, PAYMENTS_STATUS, RESERVATION_STATUS, Roles } from 'src/common/Interfaces';
 import { QueryReservationDto } from './dto/queryReservation.dto';
 import { SelectQueryBuilder } from 'typeorm/browser';
+import { ResponseReservationsDto } from './interfaces/reservations-response.interface';
 
 
 @Injectable()
@@ -41,11 +42,11 @@ export class ReservationService {
  async create(dto: CreateReservationDto, client: User) {
    const place = await this.placeService.findOne(dto.place_id);
    const type: BookingModeType = place.booking_mode.type as BookingModeType;
-   
+  
    const strategy = this.strategyFactory.getStrategy(type);
    strategy.validateDto(dto);
    strategy.validateBusiness(place as PlaceResponseDto, dto);
-
+  
    let transacctionCreated;
    try {
      transacctionCreated = await this.dataSource.transaction(async (manager) => {
@@ -140,7 +141,9 @@ export class ReservationService {
 
 
   async getAvailabilityDaily(placeId: string, date: string) {
- 
+    if(!date){
+      throw new BadRequestException("Date is required by dayli places");
+    }
     return this.dataSource.createQueryBuilder(Reservation, 'reservation')
       .select([
         'reservation.start_time AS reservation_start_time',
@@ -157,6 +160,29 @@ export class ReservationService {
       .getRawMany();
   }
 
+
+  async getAvailabilityRange(place_id: string) {
+    const today = new Date().toLocaleDateString('en-CA');
+    try {
+  
+      const reservations = await this.dataSource
+        .createQueryBuilder(Reservation, 'res')
+        .where('res.place_id = :placeId', { placeId: place_id })
+        .andWhere('res.reservation_end_date >= :today', { today })
+        .andWhere('res.status IN (:...statuses)', {
+          statuses: [RESERVATION_STATUS.CREATED,RESERVATION_STATUS.PAID],
+        })
+        .orderBy('res.reservation_start_date', 'ASC')
+        .take(6)
+        .getMany();
+  
+      return this.parseAvailabilityRange(reservations);
+    } catch (error) {
+      console.error(error);
+      throw new BadRequestException("Error in range reservations");
+  
+    }
+  }
 
 
   private buildClientReservationQuery(client: User,query: QueryReservationDto): SelectQueryBuilder<Reservation> {
@@ -356,5 +382,16 @@ export class ReservationService {
                 .getRawMany<T>();
     return {items,total,page,limit,totalPages: Math.ceil(total / limit)}
   } 
+
+
+
+  private parseAvailabilityRange(reservations: Reservation[]): ResponseReservationsDto[] {
+    return reservations.map(({ reservation_start_date, reservation_end_date, amount }) => ({
+      reservation_start_date: reservation_start_date,
+      reservation_end_date: reservation_end_date,
+      amount
+    }));
+  
+  }
   
  }
