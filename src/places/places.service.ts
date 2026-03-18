@@ -1,4 +1,4 @@
-import { BadRequestException, Inject, Injectable, InternalServerErrorException } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { CreatePlaceDto } from './dto/create-place.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Place } from './entities/place.entity';
@@ -25,6 +25,7 @@ import { ReservationService } from 'src/reservation/reservation.service';
 import { BookingModeType} from 'src/common/Interfaces';
 import { PlaceListDto } from './dto/placeList.dto';
 import { PaginationDto } from 'src/common/dtos/pagination.dto';
+import { NotFoundError } from 'rxjs';
 
 
 @Injectable()
@@ -508,9 +509,33 @@ export class PlacesService {
   }
   
   
-  async getReservationsByDate(place_id:string,date:string){
-     return this.reservationService.getAvailabilityDaily(place_id,date)
+  async getReservationsByDate(place_id: string, date: string) {
+
+    const placeFound = await this.placeRepo.findOne({
+       where: {id: place_id,status: placeEnumStatus.ACTIVE},
+       relations: {booking_mode: true}
+      });
+  
+    if (!placeFound) {
+      this.throwCommonError(NotFoundException, `place not found id: ${place_id}`);
+    }
+  
+    const modeType = placeFound!.booking_mode?.type;
+  
+    switch (modeType) {
+  
+      case BookingModeType.HOURLY:
+        return this.reservationService.getAvailabilityDaily(place_id, date);
+  
+      case BookingModeType.WEEKLY:
+      case BookingModeType.MONTHLY:
+        return this.reservationService.getAvailabilityRange(place_id);
+  
+      default:this.throwCommonError(BadRequestException,`Unsupported booking mode: ${modeType}`);
+    }
   }
+
+
 
   
   
