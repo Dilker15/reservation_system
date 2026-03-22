@@ -9,7 +9,7 @@ import { AppLoggerService } from "src/logger/logger.service";
 export class EnqueueMailServices{
 
     private logger:AppLoggerService;
-    constructor(@InjectQueue('emails-queue')private readonly queueEmail:Queue,
+    constructor(@InjectQueue('notifications.email')private readonly queueEmail:Queue,
                 private readonly appLogServ:AppLoggerService, 
   ){
         this.logger = this.appLogServ.withContext(EnqueueMailServices.name);

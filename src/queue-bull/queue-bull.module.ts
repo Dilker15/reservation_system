@@ -9,43 +9,74 @@ import { ImageUploadProcessor } from './queue-images-upload.processor';
 import { ImageLocalService } from 'src/common/helpers/imageLocalService';
 import { PlacesModule } from 'src/places/places.module';
 import { AppLoggerModule } from 'src/logger/logger.module';
+import { EnqueueReservationsJobService } from './enqueue-reservations-job.services';
+import { ReservationModule } from 'src/reservation/reservation.module';
+import { ReservationsScheduleProcessor } from './queue-reservations-shedule-job.processor';
 
 @Module({
-  imports:[
+  imports: [
     BullModule.registerQueue(
-    {
-      name:'emails-queue',
-      defaultJobOptions: {
-        attempts: 3,           
-        backoff: {
-          type: 'exponential', 
-          delay: 5000    
+      {
+        name: 'notifications.email',
+        defaultJobOptions: {
+          attempts: 3,
+          backoff: {
+            type: 'exponential',
+            delay: 5000,
+          },
+          removeOnComplete: true,
+          removeOnFail: 1000,
         },
-        removeOnComplete: true,
-        removeOnFail: false
-      }
-    },
-    {
-      name:'imageupload-queue',
-      defaultJobOptions: {
-        attempts: 5,           
-        backoff: {
-          type: 'exponential', 
-          delay: 3000    
+      },
+      {
+        name: 'media.image-upload',
+        defaultJobOptions: {
+          attempts: 5,
+          backoff: {
+            type: 'exponential',
+            delay: 3000,
+          },
+          removeOnComplete: true,
+          removeOnFail: 1000,
         },
-        removeOnComplete: true,
-        removeOnFail: false
-      }
-      
-    }
+      },
+      {
+        name: 'reservations.expiration',
+        defaultJobOptions: {
+          attempts: 3,
+          backoff: {
+            type: 'exponential',
+            delay: 4000,
+          },
+          removeOnComplete: true,
+          removeOnFail: 1000,
+        },
+      },
+    ),
 
-  ),
     EmailsModule,
     ImageUploadModule,
     AppLoggerModule,
+    ReservationModule,
     forwardRef(() => PlacesModule),
   ],
-  providers: [EnqueueMailServices,MailsProcessor,EnqueueImagesUploadServices,ImageUploadProcessor,ImageLocalService],
-  exports:[EnqueueMailServices,EnqueueImagesUploadServices],
+
+  providers: [
+    EnqueueMailServices,
+    MailsProcessor,
+
+    EnqueueImagesUploadServices,
+    ImageUploadProcessor,
+    ImageLocalService,
+
+    EnqueueReservationsJobService,
+    ReservationsScheduleProcessor,
+  ],
+
+  exports: [
+    EnqueueMailServices,
+    EnqueueImagesUploadServices,
+    EnqueueReservationsJobService,
+  ],
 })
 export class QueueBullModule {}
