@@ -10,7 +10,7 @@ import { PlacesService } from "src/places/places.service";
 
 
 
-@Processor('imageupload-queue')
+@Processor('media.image-upload')
 export class ImageUploadProcessor extends WorkerHost{
 
     private logger:AppLoggerService;
@@ -27,11 +27,11 @@ export class ImageUploadProcessor extends WorkerHost{
     async process(job: Job, token?: string): Promise<any> {
             switch(job.name){
                 case 'upload-images-cloud':{
-                    this.uploadImages(job);
+                    await this.uploadImages(job);
                     break;
                 }
                 case 'update-images-cloud':{
-                    this.updateImages(job);
+                    await this.updateImages(job);
                     break;
                 }
             }

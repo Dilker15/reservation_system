@@ -43,6 +43,10 @@ export enum JobNameImages {
   UPDATEIMAGES = "update-images-cloud"
 }
 
+export enum JobNameSchedule {
+   EXPIRERESERVATION = "expire-reservations"
+}
+
 
 export enum RESERVATION_STATUS {
   CREATED = "CREATED",              // Reserva creada sin pagar

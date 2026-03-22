@@ -5,12 +5,14 @@ import { User } from "src/users/entities/user.entity";
 import { Column, CreateDateColumn, Entity, Index, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn, Unique, UpdateDateColumn } from "typeorm";
 
 @Entity({name:'reservations'})
-@Index('idx_creation',['place','reservation_start_date','start_time','end_time'],
+@Index(
+    'idx_creation',
+    ['place','reservation_start_date','start_time','end_time'],
     {
-    unique: true,
-    where: `"status" <> 'CANCELLED'` 
-   }
-)
+      unique: true,
+      where: `"status" NOT IN ('CANCELLED','EXPIRED')`
+    }
+  )
 export class Reservation {
 
 
