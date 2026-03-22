@@ -4,7 +4,7 @@ import { CreateReservationDto } from './dto/create-reservation.dto';
 import { PlacesService } from 'src/places/places.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Reservation } from './entities/reservation.entity';
-import { Repository, DataSource } from 'typeorm';
+import { Repository, DataSource, In } from 'typeorm';
 import { User } from 'src/users/entities/user.entity';
 import { BookingStrategyFactory } from './strategies/BookingStrategyFactory';
 import { PlaceResponseDto } from 'src/places/dto/place.response.dto';
@@ -12,6 +12,8 @@ import { BookingModeType, PAYMENTS_STATUS, RESERVATION_STATUS, Roles } from 'src
 import { QueryReservationDto } from './dto/queryReservation.dto';
 import { SelectQueryBuilder } from 'typeorm/browser';
 import { ResponseReservationsDto } from './interfaces/reservations-response.interface';
+import { AppLoggerService } from 'src/logger/logger.service';
+import { EnqueueReservationsJobService } from 'src/queue-bull/enqueue-reservations-job.services';
 
 
 @Injectable()
@@ -30,12 +32,20 @@ export class ReservationService {
                   [Roles.CLIENT]: this.getReservationByIdClient.bind(this),
                   [Roles.OWNER]: this.getReservationByIdOwner.bind(this),
   };
+
+  
+  private logger:AppLoggerService;
   
   constructor(@Inject(forwardRef(() => PlacesService)) private readonly placeService: PlacesService,@InjectRepository(Reservation)
               private readonly reservationRepo: Repository<Reservation>,
               private readonly dataSource: DataSource,
               private readonly strategyFactory: BookingStrategyFactory,
-  ) {}
+              private readonly appLogService:AppLoggerService,
+              private readonly enqueReservationsServ:EnqueueReservationsJobService,
+            
+  ) {
+    this.logger = appLogService.withContext(ReservationService.name);
+  }
 
 
 
@@ -58,7 +68,7 @@ export class ReservationService {
        reservationEntity.status = RESERVATION_STATUS.CREATED;
        const repo = manager.getRepository(Reservation);
        const saved = await repo.save(reservationEntity);
-      
+       await this.enqueReservationsServ.enqueScheduleExpiration(reservationEntity.id);
        return {
           message:this.messageReservation,
           reservationId: saved.id
@@ -392,6 +402,28 @@ export class ReservationService {
       amount
     }));
   
+  }
+
+  async expireReservation(reservation_id: string) {
+    try {
+      const result = await this.reservationRepo.update(
+        {
+          id: reservation_id,
+          status: In([RESERVATION_STATUS.CREATED])
+        },
+        {
+          status: RESERVATION_STATUS.EXPIRED,
+          updated_on:new Date(),
+        }
+      );
+  
+      if (result.affected === 0) {
+        this.logger.warn(`Reservation not expired (already processed or not found):,${reservation_id}`);
+      }
+    } catch (error) {
+      this.logger.error('Error expiring reservation:', error.stack || 'stack not found');
+      throw error;
+    }
   }
   
  }

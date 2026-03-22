@@ -10,7 +10,7 @@ export class EnqueueImagesUploadServices{
 
     private logger:AppLoggerService;
 
-    constructor(@InjectQueue('imageupload-queue')private readonly queueImages:Queue,
+    constructor(@InjectQueue('media.image-upload')private readonly queueImages:Queue,
                 private readonly appLogServ : AppLoggerService,
   ){
       this.logger = this.appLogServ.withContext(EnqueueImagesUploadServices.name)

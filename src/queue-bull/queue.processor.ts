@@ -9,7 +9,7 @@ import { AppLoggerService } from "src/logger/logger.service";
 
 
 
-@Processor('emails-queue')
+@Processor('notifications.email')
 export class MailsProcessor extends WorkerHost{
 
     private logger:AppLoggerService;
