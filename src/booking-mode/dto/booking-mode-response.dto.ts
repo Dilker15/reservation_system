@@ -2,6 +2,7 @@ import { Expose } from "class-transformer";
 
 
 export class BookingModeResponseDto{
+    
     @Expose()
     id: string;
   

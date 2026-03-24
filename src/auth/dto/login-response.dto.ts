@@ -1,25 +1,24 @@
-import { IsUUID, IsString, IsEmail, IsEnum, IsBoolean } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
 import { Roles } from 'src/common/Interfaces';
 
 export class LoginResponseDto {
 
-  
-  @IsUUID()
+  @ApiProperty({ example: 'uuid-1234', description: 'User ID' })
   id: string;
 
-  @IsString()
+  @ApiProperty({ example: 'John' })
   name: string;
 
-  @IsString()
+  @ApiProperty({ example: 'Doe' })
   last_name: string;
 
-  @IsEmail()
+  @ApiProperty({ example: 'john@example.com' })
   email: string;
 
-  @IsEnum(Roles)
+  @ApiProperty({ enum: Roles, example: Roles.OWNER })
   role: Roles;
 
-  @IsBoolean()
+  @ApiProperty({ example: true })
   is_active: boolean;
 
 }

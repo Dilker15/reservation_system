@@ -1,53 +1,74 @@
-import { Controller, Post, Body ,HttpCode, HttpStatus, NotImplementedException, UseGuards, Req } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  HttpCode,
+  HttpStatus,
+  NotImplementedException,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register-auth-dto';
 import { LoginDto } from './dto/login.dto';
 import { VerifyEmailDto } from './dto/verify-email.dto';
 import { Public } from './decorators/public.decorator';
-import { Roles } from 'src/common/Interfaces';
 
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBody,
+} from '@nestjs/swagger';
 
+@ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService,
-  ) {}
-
-
+  constructor(private readonly authService: AuthService) {}
 
   @Public()
-  @Post('/register')
+  @Post('register')
+  @ApiOperation({ summary: 'Register a new user' })
+  @ApiBody({ type: RegisterDto })
+  @ApiResponse({ status: 201, description: 'User registered successfully' })
   register(@Body() createAuthDto: RegisterDto) {
     return this.authService.create(createAuthDto);
   }
 
   @Public()
-  @Post('/login')
+  @Post('login')
   @HttpCode(HttpStatus.OK)
-  login(@Body() loginDto:LoginDto){
-    return this.authService.login(loginDto)
+  @ApiOperation({ summary: 'User login' })
+  @ApiBody({ type: LoginDto })
+  @ApiResponse({ status: 200, description: 'Login successful' })
+  login(@Body() loginDto: LoginDto) {
+    return this.authService.login(loginDto);
   }
 
-
   @Public()
-  @Post('/verify-email')
-  verifyEmail(@Body() verifyDto:VerifyEmailDto){
+  @Post('verify-email')
+  @ApiOperation({ summary: 'Verify user email' })
+  @ApiBody({ type: VerifyEmailDto })
+  @ApiResponse({ status: 200, description: 'Email verified successfully' })
+  verifyEmail(@Body() verifyDto: VerifyEmailDto) {
     return this.authService.verifyEmail(verifyDto);
   }
 
-
-  @Post('/restore-password')
-  restorePassword(@Body() body:any){
-    throw new NotImplementedException('restorePassword endpoint is not implemented yet');
+  @Public()
+  @Post('restore-password')
+  @ApiOperation({ summary: 'Request password reset' })
+  @ApiResponse({ status: 501, description: 'Not implemented yet' })
+  restorePassword() {
+    throw new NotImplementedException(
+      'restorePassword endpoint is not implemented yet',
+    );
   }
 
-
+  @Public()
   @Post('reset-password')
-  resetPassword(@Body() body:any){
-    throw new NotImplementedException('resetPassword endpoint is not implemented yet');
+  @ApiOperation({ summary: 'Reset user password' })
+  @ApiResponse({ status: 501, description: 'Not implemented yet' })
+  resetPassword() {
+    throw new NotImplementedException(
+      'resetPassword endpoint is not implemented yet',
+    );
   }
-
-
-
-
-
 }
