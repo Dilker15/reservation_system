@@ -26,6 +26,7 @@ import { BookingModeType} from 'src/common/Interfaces';
 import { PlaceListDto } from './dto/placeList.dto';
 import { PaginationDto } from 'src/common/dtos/pagination.dto';
 import { NotFoundError } from 'rxjs';
+import { CacheRedisService } from 'src/cache-redis/cache-redis.service';
 
 
 @Injectable()
@@ -43,6 +44,7 @@ export class PlacesService {
               private readonly imageUploadService:ImageUploadService,
               @InjectRepository(OpeningHour) private readonly openingHourRepo:Repository<OpeningHour>,
               private readonly reservationService:ReservationService,
+              private readonly cacheService:CacheRedisService,
 ){
   this.logger = this.appLogService.withContext(PlacesService.name);
   }
@@ -119,45 +121,49 @@ export class PlacesService {
     }
   }
 
-
   async findAll(queryParams: PlaceQueryDto) {
-    const {limit = 10, page = 1} = queryParams;
-    
-    try {
-      const querySql = this.buildQueryFilterPlaces(queryParams);
-      querySql
-        .orderBy('place.created_at', 'DESC')
-        .limit(limit)
-        .offset(limit * (page - 1));
-      
-      const [data, total] = await querySql.getManyAndCount();
-      
-      if (data.length > 0) {
-        const placeIds = data.map(place => place.id);
-        const places = await this.placeRepo.find({
-          where: { id: In(placeIds) },
-          relations: ['images'],
-          select: {
-            id: true,
-            images: {
-              url: true 
-            }
-          }
-        });
-        
-        data.forEach(place => {
-          const fullPlace = places.find(p => p.id === place.id);
-          if (fullPlace) {
-            place.images = fullPlace.images;
-          }
-        });
-      }
-      
-      return {total, page, limit, data}
-    } catch(error) {
-      this.logger.error(error.message, error.stack);
-      throw new InternalServerErrorException("Something was wrong get places");
+    const { limit = 10, page = 1 } = queryParams;
+  
+    const keyCache = `places:limit=${limit}:page=${page}:category=${queryParams.category ?? 'all'}:city=${queryParams.city??''}`;
+    const cached = await this.cacheService.get(keyCache);
+    if (cached) {
+      this.appLogService.log(`places cachd : ${keyCache}`)
+      return cached;
     }
+  
+    const querySql = this.buildQueryFilterPlaces(queryParams);
+  
+    querySql
+      .orderBy('place.created_at', 'DESC')
+      .limit(limit)
+      .offset(limit * (page - 1));
+  
+    const [data, total] = await querySql.getManyAndCount();
+  
+    if (data.length > 0) {
+      const placeIds = data.map(place => place.id);
+  
+      const places = await this.placeRepo.find({
+        where: { id: In(placeIds) },
+        relations: ['images'],
+        select: {
+          id: true,
+          images: { url: true }
+        }
+      });
+  
+      data.forEach(place => {
+        const fullPlace = places.find(p => p.id === place.id);
+        if (fullPlace) {
+          place.images = fullPlace.images;
+        }
+      });
+    }
+  
+    const response = { total, page, limit, data };
+    await this.cacheService.set(keyCache, response, 60);
+  
+    return response;
   }
 
   async getMyPlaces(owner: User, pagination: PlaceOwnerQueryDto) {
@@ -480,6 +486,7 @@ export class PlacesService {
             });
          });
          await imageRepo.save(imagesToUpdate);
+         await this.cacheService.del('place')
          queryRun.commitTransaction();
      }catch(error ){
         queryRun.rollbackTransaction();
@@ -491,21 +498,25 @@ export class PlacesService {
 
 
   async getCalendar(placeId: string) {
-    try {
-      const [openingHours,place] = await Promise.all([
-        this.getOpeningHoursByPlace(placeId),
-        this.findOne(placeId),
-      ]);
-      return {
-        openingHours,
-        booking_mode:place.booking_mode.name,
-      };
-    } catch (error) {
-      this.logger.error(error.message, error.stack);
-      throw new InternalServerErrorException(
-        'Error getting calendar availability',
-      );
+    const key = `place:${placeId}:calendar`;
+  
+    const cached = await this.cacheService.get(key);
+    if (cached) {
+      this.appLogService.log(`calendar cached PLACE : ${placeId}`);
+      return cached;
     }
+  
+    const [openingHours, place] = await Promise.all([
+      this.getOpeningHoursByPlace(placeId),
+      this.findOne(placeId),
+    ]);
+  
+    const response = {
+      openingHours,
+      booking_mode: place.booking_mode.name,
+    };
+    await this.cacheService.set(key, response, 300);
+    return response;
   }
   
   
