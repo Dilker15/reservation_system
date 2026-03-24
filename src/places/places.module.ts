@@ -15,6 +15,7 @@ import { LocationsModule } from 'src/locations/locations.module';
 import { ImageUploadModule } from 'src/image-upload/image-upload.module';
 import { OpeningHour } from 'src/opening-hours/entities/opening-hour.entity';
 import { ReservationModule } from 'src/reservation/reservation.module';
+import { CacheRedisModule } from 'src/cache-redis/cache-redis.module';
 
 @Module({
   imports:[TypeOrmModule.forFeature([Place,City,PlaceImages,Category,BookingMode,Location,OpeningHour]),
@@ -22,6 +23,7 @@ import { ReservationModule } from 'src/reservation/reservation.module';
             AppLoggerModule,
             LocationsModule,
             ImageUploadModule,
+            CacheRedisModule,
             forwardRef(() => ReservationModule),
 ],
   controllers: [PlacesController],
