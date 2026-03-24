@@ -21,6 +21,7 @@ import { PaymentAccountsModule } from './payment_accounts/payment_accounts.modul
 import { TokenEncrytionModule } from './token-encrytion/token-encrytion.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { AmenitiesModule } from './amenities/amenities.module';
+import { CacheRedisModule } from './cache-redis/cache-redis.module';
 
 
 @Module({
@@ -54,6 +55,7 @@ import { AmenitiesModule } from './amenities/amenities.module';
         }
       })
     }),
+    CacheRedisModule,
     AuthModule,
     UsersModule,
     EmailsModule,
@@ -71,6 +73,7 @@ import { AmenitiesModule } from './amenities/amenities.module';
     TokenEncrytionModule,
     AnalyticsModule,
     AmenitiesModule,
+    CacheRedisModule,
 
   ],
   controllers: [AppController],

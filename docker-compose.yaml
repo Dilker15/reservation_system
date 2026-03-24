@@ -21,6 +21,12 @@ services:
         image: redis
         ports:
           - "${REDIS_PORT}:${REDIS_PORT}"
+      
+      redis_cache:
+        container_name: redis_cache
+        image: redis
+        ports:
+          - "${REDIS_CACHE_PORT}:${REDIS_PORT}"
         
 
 

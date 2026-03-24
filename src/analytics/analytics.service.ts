@@ -7,7 +7,7 @@ import { Place } from 'src/places/entities/place.entity';
 import { Reservation } from 'src/reservation/entities/reservation.entity';
 import { RESERVATION_STATUS } from 'src/common/Interfaces';
 import { ReservationStatsByPlace, RevenueByPlace } from './interfaces/Analytics.interfaces';
-
+import { CacheRedisService } from 'src/cache-redis/cache-redis.service';
 
 
 @Injectable()
@@ -19,7 +19,7 @@ export class AnalyticsService {
     RESERVATION_STATUS.CREATED,
   ];
 
-  constructor(private readonly dataSource: DataSource) {}
+  constructor(private readonly dataSource: DataSource,private readonly cacheService:CacheRedisService) {}
 
 
   async getDashboard(period: AnalyticsPeriod,owner: User): Promise<{revenuesByPlace: RevenueByPlace[];topPlaces: ReservationStatsByPlace[];bottomPlaces: ReservationStatsByPlace[],summary:any}> {
@@ -50,9 +50,14 @@ export class AnalyticsService {
     const { from, to } = this.resolvePeriod(period);
     const fromDate = this.formatDateForDB(from);
     const toDate = this.formatDateForDB(to);
-
+    const key = `owner:${owner.id}:analytics:revenue`;
+    
     try {
-      return await this.dataSource
+      const cachedData = await this.cacheService.get<RevenueByPlace[]>(key);
+      if(cachedData){
+         return cachedData;
+      }
+      const data = await this.dataSource
         .createQueryBuilder()
         .select('p.id', 'id')
         .addSelect('p.name', 'name')
@@ -69,6 +74,8 @@ export class AnalyticsService {
         .groupBy('p.id')
         .orderBy('SUM(res.total_price * res.amount)', 'DESC')
         .getRawMany();
+      await this.cacheService.set(key,data,120);
+      return data;
     } catch (error) {
       console.error(`Error fetching revenue for owner ${owner.id}:`, error);
       throw new Error(`Failed to fetch revenue for owner ${owner.id}`);
@@ -123,8 +130,13 @@ export class AnalyticsService {
 
  
   private async getReservationsByPlace(owner: User,order: 'ASC' | 'DESC',limit: number): Promise<ReservationStatsByPlace[]> {
+    const key = `owner:${owner.id}:analytics:reservations:${order}:limit:${limit}`;
     try {
-      return await this.dataSource
+       const cachedData = await this.cacheService.get<ReservationStatsByPlace[]>(key);
+       if(cachedData){
+         return cachedData;
+       }
+       const data = await this.dataSource
         .createQueryBuilder()
         .select('p.id', 'placeId')
         .addSelect('p.name', 'placeName')
@@ -139,6 +151,8 @@ export class AnalyticsService {
         .orderBy('COUNT(res.id)', order)
         .limit(limit)
         .getRawMany();
+        await this.cacheService.set(key,data,120);
+        return data;
     } catch (error) {
       console.error(`Error fetching reservations (${order}) for owner ${owner.id}:`, error);
       throw new Error(`Failed to fetch reservations for owner ${owner.id}`);
