@@ -1,32 +1,29 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body } from '@nestjs/common';
 import { BookingModeService } from './booking-mode.service';
 import { CreateBookingModeDto } from './dto/create-booking-mode.dto';
-import { UpdateBookingModeDto } from './dto/update-booking-mode.dto';
 import { Public } from 'src/auth/decorators/public.decorator';
-import { Role } from 'src/auth/decorators/role.decorator';
+import {ApiTags,ApiOperation,ApiResponse,ApiBody,} from '@nestjs/swagger';
 
-@Controller('booking-mode')
+
+@ApiTags('Booking Modes')
+@Controller('booking-mode') 
 export class BookingModeController {
   constructor(private readonly bookingModeService: BookingModeService) {}
 
-  //@Role('web-master')
-  @Public()
   @Post()
+  //@Role(Roles.ADMIN) // web master role.
+  @ApiOperation({ summary: 'Create a booking mode' })
+  @ApiBody({ type: CreateBookingModeDto })
+  @ApiResponse({ status: 201, description: 'Booking mode created' })
   create(@Body() createBookingModeDto: CreateBookingModeDto) {
     return this.bookingModeService.create(createBookingModeDto);
   }
 
-
   @Public()
   @Get()
-  getBookinModes(){
+  @ApiOperation({ summary: 'Get all booking modes' })
+  @ApiResponse({ status: 200, description: 'List of booking modes' })
+  getBookingModes() {
     return this.bookingModeService.findAll();
   }
-
-
-
-  
-
-
-
 }

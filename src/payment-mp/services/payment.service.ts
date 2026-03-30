@@ -24,19 +24,13 @@ export class PaymentService {
     ) {}
 
     async createPayment(reservationId: string, provider: PROVIDERS): Promise<CreatePaymentResponse> {
-        
-       
+    
         const reservation = await this.reservationRepo.findOne({
             where: { id: reservationId, status: RESERVATION_STATUS.CREATED },
             relations: {
-                place:{
-                    owner:{
-                        payment_accounts:true
-                    }
-                }
+                place:{owner:{payment_accounts:true}}
             }
         });
-
        
         if (!reservation) {
             throw new NotFoundException("Reservation not found or payment already initiated/completed");
@@ -45,7 +39,6 @@ export class PaymentService {
         if(paymentAccountVendor?.length === 0){
             throw new NotFoundException("Payment method not found for this place");
         }
-        
         
         const intentId = this.generateIntentId();
         const paymentData = this.mapReservationToPaymentData(reservation, provider, intentId);
@@ -69,12 +62,10 @@ export class PaymentService {
                 provider: paymentData.provider,
                 reservation: reservation.id,
             };
-
         } catch (error) {
             throw new InternalServerErrorException(`Failed to create payment preference with provider ${provider}.`);
         }
     }
-
 
 
     private mapReservationToPaymentData( reservation: Reservation,provider: PROVIDERS,intentId: string): CreatePaymentData {

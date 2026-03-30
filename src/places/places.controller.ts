@@ -1,4 +1,7 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseInterceptors, UploadedFiles, Query, ParseUUIDPipe, Put } from '@nestjs/common';
+import {
+  Controller, Get, Post, Body, Patch, Param, Delete,
+  UseInterceptors, UploadedFiles, Query, ParseUUIDPipe
+} from '@nestjs/common';
 import { PlacesService } from './places.service';
 import { CreatePlaceDto } from './dto/create-place.dto';
 import { UpdatePlaceDto } from './dto/update-place.dto';
@@ -10,158 +13,224 @@ import { GetUser } from 'src/auth/decorators/getUser.decorator';
 import { User } from 'src/users/entities/user.entity';
 import { PlaceOwnerQueryDto, PlaceQueryDto } from './dto/placeQuery.dto';
 import { Public } from 'src/auth/decorators/public.decorator';
-import { PlaceResponseDto } from './dto/place.response.dto';
 import { UpdateLocationDto } from 'src/locations/dto/update.location.dto';
 import { AvailabilityDto } from './dto/availability.dto';
 import { ParseAndValidateJsonPipe } from 'src/common/pipes/ParseJson.pipe';
-import { CalendarAvailabityDto } from 'src/common/dtos/calendarAvailabity';
 import { GetPlaceReservationsQueryDto } from './dto/place.reservation.dto';
-import { PaginationDto } from 'src/common/dtos/pagination.dto';
 
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiParam,
+  ApiQuery,
+  ApiBearerAuth,
+  ApiBody,
+  ApiConsumes
+} from '@nestjs/swagger';
 
-
-
-
+@ApiTags('Places')
 @Controller('places')
 export class PlacesController {
-  constructor(private readonly placesService: PlacesService,private readonly imageLocalService:ImageLocalService) {}
+
+  constructor(
+    private readonly placesService: PlacesService,
+    private readonly imageLocalService: ImageLocalService
+  ) {}
 
   @UseInterceptors(ImageUploadInterceptor('images'))
   @Role(Roles.OWNER)
+  @ApiBearerAuth()
   @Post('hourly')
-  async create(@Body('opening_hours',ParseAndValidateJsonPipe) opening_hours:AvailabilityDto[],
-                @Body() createPlaceDto: Partial<CreatePlaceDto>,
-                @UploadedFiles() images:Express.Multer.File[],
-                @GetUser() currentUser:User) {
-
-    const routeImages = await this.imageLocalService.saveImagesToDisk(images);
-    createPlaceDto.opening_hours = opening_hours;
-    return this.placesService.create(createPlaceDto as CreatePlaceDto,routeImages,currentUser);
+  @ApiOperation({ summary: 'Create place with hourly availability' })
+  @ApiConsumes('multipart/form-data')
+  @ApiResponse({ status: 201, description: 'Place created successfully' })
+  create(
+    @Body('opening_hours', ParseAndValidateJsonPipe) opening_hours: AvailabilityDto[],
+    @Body() createPlaceDto: Partial<CreatePlaceDto>,
+    @UploadedFiles() images: Express.Multer.File[],
+    @GetUser() currentUser: User
+  ) {
+    return this.placesService.create(createPlaceDto as CreatePlaceDto, [], currentUser);
   }
 
-
-
   @UseInterceptors(ImageUploadInterceptor('images'))
   @Role(Roles.OWNER)
+  @ApiBearerAuth()
   @Post('range')
-  async createRange(
-                @Body() createPlaceDto: Partial<CreatePlaceDto>,
-                @UploadedFiles() images:Express.Multer.File[],
-                @GetUser() currentUser:User) {
-    const routeImages = await this.imageLocalService.saveImagesToDisk(images);
-    return this.placesService.createRange(createPlaceDto as CreatePlaceDto,routeImages,currentUser);
+  @ApiOperation({ summary: 'Create place with range booking mode' })
+  @ApiConsumes('multipart/form-data')
+  @ApiResponse({ status: 201 })
+  createRange(
+    @Body() createPlaceDto: Partial<CreatePlaceDto>,
+    @UploadedFiles() images: Express.Multer.File[],
+    @GetUser() currentUser: User
+  ) {
+    return this.placesService.createRange(createPlaceDto as CreatePlaceDto, [], currentUser);
   }
 
   @Public()
-  @Get() //
-  findAll(@Query() paginationDto:PlaceQueryDto) {
-
+  @Get()
+  @ApiOperation({ summary: 'Get all places' })
+  @ApiQuery({ name: 'page', required: false, example: 1 })
+  @ApiQuery({ name: 'limit', required: false, example: 10 })
+  findAll(@Query() paginationDto: PlaceQueryDto) {
     return this.placesService.findAll(paginationDto);
   }
 
-  
   @Role(Roles.OWNER)
+  @ApiBearerAuth()
   @Get('me')
-  async getPlacesOwner(@GetUser() owner: User,@Query() pagination:PlaceOwnerQueryDto) {
-    return this.placesService.getMyPlaces(owner,pagination);
+  @ApiOperation({ summary: 'Get places for current owner' })
+  getPlacesOwner(@GetUser() owner: User, @Query() pagination: PlaceOwnerQueryDto) {
+    return this.placesService.getMyPlaces(owner, pagination);
   }
-  
+
   @Public()
   @Get(':id')
-  async findOne(@Param('id', ParseUUIDPipe) placeId: string) {
+  @ApiOperation({ summary: 'Get place by ID' })
+  @ApiParam({ name: 'id', example: 'uuid' })
+  findOne(@Param('id', ParseUUIDPipe) placeId: string) {
     return this.placesService.findOne(placeId);
   }
 
-
-
   @Role(Roles.OWNER)
-  @Patch(":place_id") //
-  updatePlace(@Body() updateDto:UpdatePlaceDto,@Param('place_id',ParseUUIDPipe) place_id:string,@GetUser() owner:User){
-    return this.placesService.updateBasicInformation(updateDto,place_id,owner);
+  @ApiBearerAuth()
+  @Patch(":place_id")
+  @ApiOperation({ summary: 'Update basic place information' })
+  @ApiParam({ name: 'place_id', example: 'uuid' })
+  @ApiBody({ type: UpdatePlaceDto })
+  updatePlace(
+    @Body() updateDto: UpdatePlaceDto,
+    @Param('place_id', ParseUUIDPipe) place_id: string,
+    @GetUser() owner: User
+  ) {
+    return this.placesService.updateBasicInformation(updateDto, place_id, owner);
   }
-
-
-
-
 
   @UseInterceptors(ImageUploadInterceptor('imagesToUpdate'))
   @Role(Roles.OWNER)
-  @Patch(':place_id/images') //
-  async updatePlacesImages(@Param('place_id',ParseUUIDPipe) place_id:string,@GetUser() owner:User,@UploadedFiles() imagesToUpdate:Express.Multer.File[]){
-    const imagesRoutes = await this.imageLocalService.saveImagesToDisk(imagesToUpdate); 
-    return this.placesService.updateImages(place_id,owner,imagesRoutes);
+  @ApiBearerAuth()
+  @Patch(':place_id/images')
+  @ApiOperation({ summary: 'Update place images' })
+  @ApiParam({ name: 'place_id', example: 'uuid' })
+  @ApiConsumes('multipart/form-data')
+  updatePlacesImages(
+    @Param('place_id', ParseUUIDPipe) place_id: string,
+    @GetUser() owner: User,
+    @UploadedFiles() imagesToUpdate: Express.Multer.File[]
+  ) {
+    return this.placesService.updateImages(place_id, owner, []);
   }
-
-
 
   @Role(Roles.OWNER)
-  @Patch(':place_id/category') //
-  updatePlaceCategory(@Param('place_id',ParseUUIDPipe) place_id:string,@Body('category_id',ParseUUIDPipe) category_id:string,@GetUser() owner:User){
-    return this.placesService.updateCategory(place_id,category_id,owner);
+  @ApiBearerAuth()
+  @Patch(':place_id/category')
+  @ApiOperation({ summary: 'Update place category' })
+  @ApiParam({ name: 'place_id', example: 'uuid' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        category_id: { type: 'string', example: 'uuid' }
+      }
+    }
+  })
+  updatePlaceCategory(
+    @Param('place_id', ParseUUIDPipe) place_id: string,
+    @Body('category_id', ParseUUIDPipe) category_id: string,
+    @GetUser() owner: User
+  ) {
+    return this.placesService.updateCategory(place_id, category_id, owner);
   }
-
-
-
 
   @Role(Roles.OWNER)
-  @Patch(":place_id/booking_mode/") //
-  updatePlaceBookingMode(@Param('place_id',ParseUUIDPipe) place_id:string,@Body('booking_mode_id',ParseUUIDPipe) booking_mode_id:string,@GetUser() owner:User){
-    return this.placesService.updateBookingMode(place_id,booking_mode_id,owner)
+  @ApiBearerAuth()
+  @Patch(":place_id/booking_mode/")
+  @ApiOperation({ summary: 'Update booking mode' })
+  @ApiParam({ name: 'place_id', example: 'uuid' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        booking_mode_id: { type: 'string', example: 'uuid' }
+      }
+    }
+  })
+  updatePlaceBookingMode(
+    @Param('place_id', ParseUUIDPipe) place_id: string,
+    @Body('booking_mode_id', ParseUUIDPipe) booking_mode_id: string,
+    @GetUser() owner: User
+  ) {
+    return this.placesService.updateBookingMode(place_id, booking_mode_id, owner)
   }
-
-
-  
 
   @Role(Roles.OWNER)
-  @Delete(":place_id/images/:image_id") //
-  deleteImageFromPlace(@Param('place_id',ParseUUIDPipe) place_id:string,@Param('image_id') image_id:string,@GetUser() owner:User){
-    return this.placesService.deleteImage(place_id,image_id,owner);
+  @ApiBearerAuth()
+  @Delete(":place_id/images/:image_id")
+  @ApiOperation({ summary: 'Delete image from place' })
+  @ApiParam({ name: 'place_id', example: 'uuid' })
+  @ApiParam({ name: 'image_id', example: 'uuid' })
+  deleteImageFromPlace(
+    @Param('place_id', ParseUUIDPipe) place_id: string,
+    @Param('image_id') image_id: string,
+    @GetUser() owner: User
+  ) {
+    return this.placesService.deleteImage(place_id, image_id, owner);
   }
-
 
   @Role(Roles.OWNER)
-  @Patch(":place_id/location/")//
-  updateLocation(@Param('place_id',ParseUUIDPipe) place_id:string,@Body() newLocation:UpdateLocationDto,@GetUser() owner:User){
-     return this.placesService.updateLocation(place_id,newLocation,owner);
+  @ApiBearerAuth()
+  @Patch(":place_id/location/")
+  @ApiOperation({ summary: 'Update place location' })
+  @ApiParam({ name: 'place_id', example: 'uuid' })
+  @ApiBody({ type: UpdateLocationDto })
+  updateLocation(
+    @Param('place_id', ParseUUIDPipe) place_id: string,
+    @Body() newLocation: UpdateLocationDto,
+    @GetUser() owner: User
+  ) {
+    return this.placesService.updateLocation(place_id, newLocation, owner);
   }
-
-
-
 
   @Role(Roles.OWNER)
-  @Patch(":place_id/city")//
-  updateCity(@Param('place_id',ParseUUIDPipe) place_id:string,@Body('city_id',ParseUUIDPipe) city_id:string,@GetUser() owner:User){
-    return this.placesService.updateCity(place_id,city_id,owner);
+  @ApiBearerAuth()
+  @Patch(":place_id/city")
+  @ApiOperation({ summary: 'Update place city' })
+  @ApiParam({ name: 'place_id', example: 'uuid' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        city_id: { type: 'string', example: 'uuid' }
+      }
+    }
+  })
+  updateCity(
+    @Param('place_id', ParseUUIDPipe) place_id: string,
+    @Body('city_id', ParseUUIDPipe) city_id: string,
+    @GetUser() owner: User
+  ) {
+    return this.placesService.updateCity(place_id, city_id, owner);
   }
-
-  
 
   @Public()
   @Get(':id/schedules/day')
-  getShedule(@Param('id',ParseUUIDPipe) place_id:string){
-     return  this.placesService.getCalendar(place_id);
+  @ApiOperation({ summary: 'Get place schedule' })
+  @ApiParam({ name: 'id', example: 'uuid' })
+  getShedule(@Param('id', ParseUUIDPipe) place_id: string) {
+    return this.placesService.getCalendar(place_id);
   }
-
 
   @Public()
   @Get(':id/reservations')
+  @ApiOperation({ summary: 'Get reservations by date' })
+  @ApiParam({ name: 'id', example: 'uuid' })
+  @ApiQuery({ name: 'date', example: '2026-03-20' })
   getPlaceReservationsByDate(
     @Param('id') placeId: string,
     @Query() query: GetPlaceReservationsQueryDto,
   ) {
     return this.placesService.getReservationsByDate(placeId, query.date);
   }
-  
-
-
-
-
-
-
-
-
-
-
-
-
 }

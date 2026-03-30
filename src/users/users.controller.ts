@@ -8,6 +8,4 @@ import { RegisterDto } from 'src/auth/dto/register-auth-dto';
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  
-  
 }
