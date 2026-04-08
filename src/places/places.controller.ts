@@ -28,6 +28,7 @@ import {
   ApiBody,
   ApiConsumes
 } from '@nestjs/swagger';
+import { IdempotencyInterceptor } from 'src/common/interceptors/idempotency.interceptor';
 
 @ApiTags('Places')
 @Controller('places')
@@ -38,6 +39,7 @@ export class PlacesController {
     private readonly imageLocalService: ImageLocalService
   ) {}
 
+  @UseInterceptors(IdempotencyInterceptor)
   @UseInterceptors(ImageUploadInterceptor('images'))
   @Role(Roles.OWNER)
   @ApiBearerAuth()
@@ -45,15 +47,21 @@ export class PlacesController {
   @ApiOperation({ summary: 'Create place with hourly availability' })
   @ApiConsumes('multipart/form-data')
   @ApiResponse({ status: 201, description: 'Place created successfully' })
-  create(
+  async create(
     @Body('opening_hours', ParseAndValidateJsonPipe) opening_hours: AvailabilityDto[],
     @Body() createPlaceDto: Partial<CreatePlaceDto>,
     @UploadedFiles() images: Express.Multer.File[],
     @GetUser() currentUser: User
   ) {
-    return this.placesService.create(createPlaceDto as CreatePlaceDto, [], currentUser);
+    if (typeof createPlaceDto.opening_hours === 'string') {
+      createPlaceDto.opening_hours = JSON.parse(createPlaceDto.opening_hours);
+
+    }
+    const routeImages = await this.imageLocalService.saveImagesToDisk(images);
+    return this.placesService.create(createPlaceDto as CreatePlaceDto,routeImages, currentUser);
   }
 
+  @UseInterceptors(IdempotencyInterceptor)
   @UseInterceptors(ImageUploadInterceptor('images'))
   @Role(Roles.OWNER)
   @ApiBearerAuth()
@@ -61,12 +69,16 @@ export class PlacesController {
   @ApiOperation({ summary: 'Create place with range booking mode' })
   @ApiConsumes('multipart/form-data')
   @ApiResponse({ status: 201 })
-  createRange(
+  async createRange(
     @Body() createPlaceDto: Partial<CreatePlaceDto>,
     @UploadedFiles() images: Express.Multer.File[],
     @GetUser() currentUser: User
   ) {
-    return this.placesService.createRange(createPlaceDto as CreatePlaceDto, [], currentUser);
+    if (typeof createPlaceDto.opening_hours === 'string') {
+      createPlaceDto.opening_hours = JSON.parse(createPlaceDto.opening_hours);
+    }
+    const routeImages = await this.imageLocalService.saveImagesToDisk(images);
+    return this.placesService.createRange(createPlaceDto as CreatePlaceDto, routeImages, currentUser);
   }
 
   @Public()

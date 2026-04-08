@@ -16,6 +16,7 @@ import { ImageUploadModule } from 'src/image-upload/image-upload.module';
 import { OpeningHour } from 'src/opening-hours/entities/opening-hour.entity';
 import { ReservationModule } from 'src/reservation/reservation.module';
 import { CacheRedisModule } from 'src/cache-redis/cache-redis.module';
+import { IdempotencyInterceptor } from 'src/common/interceptors/idempotency.interceptor';
 
 @Module({
   imports:[TypeOrmModule.forFeature([Place,City,PlaceImages,Category,BookingMode,Location,OpeningHour]),
@@ -27,7 +28,7 @@ import { CacheRedisModule } from 'src/cache-redis/cache-redis.module';
             forwardRef(() => ReservationModule),
 ],
   controllers: [PlacesController],
-  providers: [PlacesService,ImageLocalService],
+  providers: [PlacesService,ImageLocalService,IdempotencyInterceptor],
   exports:[PlacesService]
 })
 export class PlacesModule {}
