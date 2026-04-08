@@ -7,7 +7,7 @@ import {
   ArrayUnique,
   IsOptional
 } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Type, Transform } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { AvailabilityDto } from './availability.dto';
 
@@ -35,15 +35,27 @@ export class CreatePlaceDto {
   @IsNumber()
   longitude: number;
 
+
   @ApiProperty({
     type: [AvailabilityDto],
     description: 'Opening hours per day',
+  })
+  @Transform(({ value }) => {
+    if (typeof value === 'string') {
+      try {
+        return JSON.parse(value);
+      } catch {
+        return [];
+      }
+    }
+    return value;
   })
   @IsArray()
   @ArrayUnique((o: AvailabilityDto) => o.day)
   @ValidateNested({ each: true })
   @Type(() => AvailabilityDto)
   opening_hours: AvailabilityDto[];
+  
 
   @ApiProperty({ example: 100, description: 'Price per booking' })
   @Type(() => Number)
@@ -82,10 +94,21 @@ export class CreatePlaceDto {
   @IsNumber()
   size_m2: number;
 
+
   @ApiPropertyOptional({
     type: [String],
     example: ['uuid1', 'uuid2'],
     description: 'Optional list of amenity IDs',
+  })
+  @Transform(({ value }) => {
+    if (typeof value === 'string') {
+      try {
+        return JSON.parse(value);
+      } catch {
+        return [];
+      }
+    }
+    return value;
   })
   @IsOptional()
   @IsArray()

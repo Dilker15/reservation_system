@@ -1,5 +1,5 @@
 import { Processor, WorkerHost } from "@nestjs/bullmq";
-import { InternalServerErrorException } from "@nestjs/common";
+import { BadRequestException, InternalServerErrorException } from "@nestjs/common";
 import { Job } from "bullmq";
 import { ImageLocalService } from "src/common/helpers/imageLocalService";
 import { ImageUploadService } from "src/image-upload/image-upload.service";
@@ -34,6 +34,9 @@ export class ImageUploadProcessor extends WorkerHost{
                     await this.updateImages(job);
                     break;
                 }
+                default:
+                    this.logger.error(`Error processing image on ${job.name}`,'')
+                    throw new BadRequestException(`Action not found : ${job.name}`);
             }
     }
 
