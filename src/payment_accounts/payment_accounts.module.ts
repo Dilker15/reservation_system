@@ -12,14 +12,17 @@ import { TokenEncrytionModule } from 'src/token-encrytion/token-encrytion.module
 import { OAuthStates } from './entities/oauth_states.entity';
 import { StatesService } from './strategies/states.service';
 import { BcryptService } from 'src/common/helpers/bcryp';
+import { IdempotencyInterceptor } from 'src/common/interceptors/idempotency.interceptor';
+import { CacheRedisModule } from 'src/cache-redis/cache-redis.module';
 
 @Module({
   imports:[
     TypeOrmModule.forFeature([PaymentAccount,OAuthStates]),
     ConfigModule,
     TokenEncrytionModule,
+    CacheRedisModule,
   ],
   controllers: [PaymentAccountsController],
-  providers: [PaymentAccountsService,OAuthFactory,MercadoPagoOAuthStrategy,StripeOAuthStrategy,StatesService,BcryptService],
+  providers: [PaymentAccountsService,OAuthFactory,MercadoPagoOAuthStrategy,StripeOAuthStrategy,StatesService,BcryptService,IdempotencyInterceptor],
 })
 export class PaymentAccountsModule {}

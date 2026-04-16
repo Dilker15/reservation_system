@@ -127,12 +127,13 @@ export class PlacesController {
   @ApiOperation({ summary: 'Update place images' })
   @ApiParam({ name: 'place_id', example: 'uuid' })
   @ApiConsumes('multipart/form-data')
-  updatePlacesImages(
+  async updatePlacesImages(
     @Param('place_id', ParseUUIDPipe) place_id: string,
     @GetUser() owner: User,
     @UploadedFiles() imagesToUpdate: Express.Multer.File[]
   ) {
-    return this.placesService.updateImages(place_id, owner, []);
+    const imageRoutes = await this.imageLocalService.saveImagesToDisk(imagesToUpdate);
+    return this.placesService.updateImages(place_id, owner, imageRoutes); 
   }
 
   @Role(Roles.OWNER)

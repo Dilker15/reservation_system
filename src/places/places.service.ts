@@ -139,7 +139,6 @@ export class PlacesService {
       .offset(limit * (page - 1));
   
     const [data, total] = await querySql.getManyAndCount();
-  
     if (data.length > 0) {
       const placeIds = data.map(place => place.id);
   
@@ -206,7 +205,6 @@ export class PlacesService {
 
 
   async findOne(placeId: string,currentOwner?: User): Promise<PlaceResponseDto> {
-  
     try {
       const query = this.placeRepo
         .createQueryBuilder('place')
@@ -235,19 +233,23 @@ export class PlacesService {
           'place.id',
           'place.name',
           'place.description',
+          'place.address',
           'place.price',
           'place.max_guests',
           'place.bedrooms',
           'place.bathrooms',
           'place.size_m2',
           'image.url',
+          'image.id',
 
           'category.name',
+          'category.id',
 
           'booking.name',
           'booking.type',
   
           'city.name',
+          'city.id',
           'country.id',
           'country.name',
 
@@ -331,7 +333,7 @@ export class PlacesService {
      if(!bookingFound){
        throw new BadRequestException("Booking Mode to update not found");
      }
-    const placeFound = await this.findOne(place_id,owner); // IT VERIFY IF PLACE EXISTS AND RETURN IT;
+    const placeFound = await this.findOne(place_id,owner); // THIS VERIFY IF PLACE EXISTS AND RETURN IT;
     await this.placeRepo.update(place_id,{booking_mode:bookingFound});
     return placeFound;
   }  
