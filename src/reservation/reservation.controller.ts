@@ -6,7 +6,8 @@ import {
   Patch,
   Param,
   ParseUUIDPipe,
-  Query
+  Query,
+  UseInterceptors
 } from '@nestjs/common';
 import { ReservationService } from './reservation.service';
 import { CreateReservationDto } from './dto/create-reservation.dto';
@@ -24,6 +25,7 @@ import {
   ApiParam,
   ApiQuery
 } from '@nestjs/swagger';
+import { IdempotencyInterceptor } from 'src/common/interceptors/idempotency.interceptor';
 
 @ApiTags('Reservations')
 @ApiBearerAuth()
@@ -32,6 +34,7 @@ export class ReservationController {
 
   constructor(private readonly reservationService: ReservationService) {}
 
+  @UseInterceptors(IdempotencyInterceptor)
   @ApiOperation({ summary: 'Create a reservation (CLIENT)' })
   @Role(Roles.CLIENT)
   @Post()
@@ -75,6 +78,7 @@ export class ReservationController {
     return this.reservationService.getReservationById(reseravtion_id, currenUser);
   }
 
+  @UseInterceptors(IdempotencyInterceptor)
   @ApiOperation({ summary: 'Cancel a reservation' })
   @ApiParam({ name: 'id', example: '550e8400-e29b-41d4-a716-446655440000' })
   @Role(Roles.OWNER, Roles.CLIENT)

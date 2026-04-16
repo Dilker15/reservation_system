@@ -8,6 +8,7 @@ import {
   Res,
   Query,
   ParseUUIDPipe,
+  UseInterceptors,
 } from '@nestjs/common';
 import { PaymentAccountsService } from './payment_accounts.service';
 import { GetUser } from 'src/auth/decorators/getUser.decorator';
@@ -27,6 +28,7 @@ import {
   ApiQuery,
   ApiBody,
 } from '@nestjs/swagger';
+import { IdempotencyInterceptor } from 'src/common/interceptors/idempotency.interceptor';
 
 @ApiTags('Payment Accounts')
 @Controller('payment-accounts')
@@ -42,6 +44,7 @@ export class PaymentAccountsController {
     return this.paymentAccountsService.getConnectedAccounts(owner);
   }
 
+  @UseInterceptors(IdempotencyInterceptor)
   @Role(Roles.OWNER)
   @ApiBearerAuth()
   @Get('oauth/:provider/connect')

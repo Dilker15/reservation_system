@@ -6,14 +6,17 @@ import { Reservation } from './entities/reservation.entity';
 import { PlacesModule } from 'src/places/places.module';
 import { BookingStrategyFactory } from './strategies/BookingStrategyFactory';
 import { QueueBullModule } from 'src/queue-bull/queue-bull.module';
+import { IdempotencyInterceptor } from 'src/common/interceptors/idempotency.interceptor';
+import { CacheRedisModule } from 'src/cache-redis/cache-redis.module';
 
 @Module({
   imports:[TypeOrmModule.forFeature([Reservation]),
            forwardRef(() => PlacesModule),
            forwardRef(() => QueueBullModule),
+           CacheRedisModule,
   ],
   controllers: [ReservationController],
-  providers: [ReservationService,BookingStrategyFactory],
+  providers: [ReservationService,BookingStrategyFactory,IdempotencyInterceptor],
   exports:[ReservationService],
 })
 export class ReservationModule {}
