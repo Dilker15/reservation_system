@@ -29,6 +29,7 @@ import {
   ApiConsumes
 } from '@nestjs/swagger';
 import { IdempotencyInterceptor } from 'src/common/interceptors/idempotency.interceptor';
+import { UpdateBasicInformationDto } from './dto/update-place-basicInformation.dto';
 
 @ApiTags('Places')
 @Controller('places')
@@ -111,9 +112,9 @@ export class PlacesController {
   @Patch(":place_id")
   @ApiOperation({ summary: 'Update basic place information' })
   @ApiParam({ name: 'place_id', example: 'uuid' })
-  @ApiBody({ type: UpdatePlaceDto })
+  @ApiBody({ type: UpdateBasicInformationDto })
   updatePlace(
-    @Body() updateDto: UpdatePlaceDto,
+    @Body() updateDto: UpdateBasicInformationDto,
     @Param('place_id', ParseUUIDPipe) place_id: string,
     @GetUser() owner: User
   ) {
@@ -158,6 +159,7 @@ export class PlacesController {
   }
 
   @Role(Roles.OWNER)
+  @UseInterceptors(IdempotencyInterceptor)
   @ApiBearerAuth()
   @Patch(":place_id/booking_mode/")
   @ApiOperation({ summary: 'Update booking mode' })
@@ -178,7 +180,9 @@ export class PlacesController {
     return this.placesService.updateBookingMode(place_id, booking_mode_id, owner)
   }
 
+  
   @Role(Roles.OWNER)
+  @UseInterceptors(IdempotencyInterceptor)
   @ApiBearerAuth()
   @Delete(":place_id/images/:image_id")
   @ApiOperation({ summary: 'Delete image from place' })
@@ -192,7 +196,9 @@ export class PlacesController {
     return this.placesService.deleteImage(place_id, image_id, owner);
   }
 
+
   @Role(Roles.OWNER)
+  @UseInterceptors(IdempotencyInterceptor)
   @ApiBearerAuth()
   @Patch(":place_id/location/")
   @ApiOperation({ summary: 'Update place location' })
@@ -206,6 +212,7 @@ export class PlacesController {
     return this.placesService.updateLocation(place_id, newLocation, owner);
   }
 
+  @UseInterceptors(IdempotencyInterceptor)
   @Role(Roles.OWNER)
   @ApiBearerAuth()
   @Patch(":place_id/city")
