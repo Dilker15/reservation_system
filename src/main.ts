@@ -12,6 +12,7 @@ import { AppLoggerService } from './logger/logger.service';
 import * as bodyParser from 'body-parser';
 
 
+
 async function bootstrap() {
   const app = await NestFactory.create(AppModule,{
     bufferLogs:true,

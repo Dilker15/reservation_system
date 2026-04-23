@@ -27,6 +27,7 @@ import { PlaceListDto } from './dto/placeList.dto';
 import { PaginationDto } from 'src/common/dtos/pagination.dto';
 import { NotFoundError } from 'rxjs';
 import { CacheRedisService } from 'src/cache-redis/cache-redis.service';
+import { UpdateBasicInformationDto } from './dto/update-place-basicInformation.dto';
 
 
 @Injectable()
@@ -223,7 +224,7 @@ export class PlacesService {
         });
   
       if (currentOwner) {
-        query.andWhere('place.ownerId = :ownerId', {
+        query.andWhere('place.owner_id = :ownerId', {
           ownerId: currentOwner.id,
         });
       }
@@ -284,7 +285,7 @@ export class PlacesService {
   
 
 
-  async updateBasicInformation(updatePlaceDto:UpdatePlaceDto,place_id:string,ownerPlace:User){
+  async updateBasicInformation(updatePlaceDto:UpdateBasicInformationDto,place_id:string,ownerPlace:User){
     try{
        const placeFound = await this.findOne(place_id,ownerPlace)
         await this.placeRepo.update(place_id, {
@@ -374,45 +375,35 @@ export class PlacesService {
     
 
 
-
     async deleteImage(place_id: string, image_id: string, owner: User) {
-      let imageFound;
-
-      const queryRunner = this.dataSource.createQueryRunner();
-      await queryRunner.connect();
-      await queryRunner.startTransaction();
+      const repo = this.placeImagesRepo;
     
-      try {
-        const repo = queryRunner.manager.getRepository(PlaceImages);
-        await this.findOne(place_id, owner);
+      await this.findOne(place_id, owner);
     
-        imageFound = await repo.findOne({
-          where: { storage_id: image_id, place: { id: place_id } },
-        });
+      const imageFound = await repo.findOne({
+        where: { id: image_id, place: { id: place_id } },
+      });
     
-        if (!imageFound) {
-          throw new BadRequestException(`Image with ID ${image_id} not found in place ${place_id}`);
-        }
-    
-        await repo.remove(imageFound);
-        await queryRunner.commitTransaction();
-        this.logger.log("Image deleted from DB successfully");
-      } catch (error) {
-        await queryRunner.rollbackTransaction();
-        this.logger.error(error?.message, error?.stack || "trace not found on deleteImage");
-        this.throwCommonError(error, "Error on deleteImages()");
-      } finally {
-        await queryRunner.release();
+      if (!imageFound) {
+        throw new BadRequestException(
+          `Image with ID ${image_id} not found in place ${place_id}`
+        );
       }
+    
+      await repo.remove(imageFound);
+      this.logger.log("Image deleted from DB successfully");
+    
       try {
-        await this.imageUploadService.deleteImage(image_id);
+        await this.imageUploadService.deleteImage(imageFound.storage_id);
         this.logger.log("Image deleted from cloud successfully");
       } catch (err) {
-        this.logger.warn(`Failed to delete image ${image_id} from cloud storage: ${err.message}`);
+        this.logger.warn(
+          `Failed to delete image ${image_id} from cloud storage: ${err.message}`
+        );
       }
+    
       return imageFound;
     }
-  
 
 
   private async getInformationToCreatePlace(category_id: string,booking_id: string,city_id: string):Promise<[City, BookingMode, Category]> {
@@ -479,14 +470,14 @@ export class PlacesService {
          await this.findOne(place_id);
          const imageRepo = queryRun.manager.getRepository(PlaceImages);
          const imagesToUpdate = images.map((currenImage)=>{
-            return this.placeImagesRepo.create({
-               place:{id:place_id},
-               ...currenImage,
-               storage_id:currenImage.public_id,
-               mime_type:currenImage.format,
-               original_name:currenImage.original_filename,
-            });
-         });
+          return this.placeImagesRepo.create({
+             place:{id:place_id},
+             ...currenImage,
+             storage_id:currenImage.public_id,
+             mime_type:currenImage.format,
+             original_name:currenImage.original_filename,
+          });
+       });
          await imageRepo.save(imagesToUpdate);
          await this.cacheService.del('place')
          queryRun.commitTransaction();
