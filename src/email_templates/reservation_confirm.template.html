@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reservation Confirmed</title>
+    <title>Reserva Confirmada</title>
     <style>
         body {
             font-family: 'Helvetica', Arial, sans-serif;
@@ -21,7 +21,7 @@
         }
         .header {
             text-align: center;
-            background-color: #00AA6C; /* TripAdvisor green */
+            background-color: #00AA6C;
             color: #ffffff;
             padding: 20px 0;
             font-size: 24px;
@@ -32,12 +32,12 @@
         }
         .text {
             font-size: 16px;
-            color: #004F32; /* dark green text */
+            color: #004F32;
             margin-bottom: 15px;
             text-align: center;
         }
         .card {
-            background-color: #F2FBF7; /* soft green background */
+            background-color: #F2FBF7;
             border-radius: 6px;
             padding: 20px;
             margin-top: 20px;
@@ -67,51 +67,51 @@
 <body>
     <div class="container">
         <div class="header">
-            Reservation Confirmed
+            Reserva Confirmada
         </div>
 
         <div class="content">
             <p class="text">
-                Hello <strong>{{clientName}}</strong>,
+                Hola <strong>{{clientName}}</strong>,
             </p>
 
             <p class="text">
-                We’re happy to let you know that your reservation has been successfully confirmed.
+                Nos complace informarte que tu reserva ha sido confirmada exitosamente.
             </p>
 
             <div class="card">
                 <p class="item">
-                    <strong>Place:</strong> {{placeName}}
+                    <strong>Lugar:</strong> {{placeName}}
                 </p>
 
                 <p class="item">
-                    <strong>Reservation Start Date:</strong> {{reservationStart}}
+                    <strong>Fecha de Inicio:</strong> {{reservationStart}}
                 </p>
 
                 <p class="item">
-                    <strong>Start Hour:</strong> {{startHour}}
+                    <strong>Hora de Inicio:</strong> {{startHour}}
                 </p>
 
                 <p class="item">
-                    <strong>End Hour:</strong> {{endHour}}
+                    <strong>Hora de Fin:</strong> {{endHour}}
                 </p>
 
                 <p class="item">
-                    <strong>Reservation End Date:</strong> {{reservationEnd}}
+                    <strong>Fecha de Fin:</strong> {{reservationEnd}}
                 </p>
             </div>
 
             <p class="text" style="margin-top: 25px;">
-                If you have any questions or need to make changes, feel free to contact us.
+                Si tienes alguna pregunta o necesitas realizar cambios, no dudes en contactarnos.
             </p>
 
             <p class="text">
-                Thank you for choosing us!
+                ¡Gracias por elegirnos!
             </p>
         </div>
 
         <div class="footer">
-            &copy; 2025 Your Platform. All rights reserved.
+            &copy; 2026 Tu Plataforma DCP. Todos los derechos reservados.
         </div>
     </div>
 </body>

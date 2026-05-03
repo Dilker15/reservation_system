@@ -63,7 +63,7 @@ export class WebHookService {
             await this.notifyReservationPayment(paymentSaved);
         }catch(error){
             this.logger.error(
-              'Error on processEvent',
+              'Error on processEvent payment ',
               error instanceof Error ? error.stack : JSON.stringify(error),
             );
         }
@@ -150,7 +150,7 @@ export class WebHookService {
       const place = payment.reservation.place;
       const dataNotification = this.parserToNotification.parserNotificationConfirm(client,reservation,place);
       Promise.all([this.enqueNotifications.enqueEmail(EMAIL_TYPE.ADMIN_CONFIRM,{data:dataNotification,to:owner.email,notification_type:EMAIL_TYPE.ADMIN_CONFIRM}),
-                   this.enqueNotifications.enqueEmail(EMAIL_TYPE.RESERVATION_CONFIRM,{data:dataNotification,to:owner.email,notification_type:EMAIL_TYPE.RESERVATION_CONFIRM})])
+                   this.enqueNotifications.enqueEmail(EMAIL_TYPE.RESERVATION_CONFIRM,{data:dataNotification,to:client.email,notification_type:EMAIL_TYPE.RESERVATION_CONFIRM})])
     }
 
 
