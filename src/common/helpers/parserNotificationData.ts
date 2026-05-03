@@ -14,7 +14,7 @@ export class ParserNotificationData{
 
     parserNotificationConfirm(client:User,reservation:Reservation,place:Place):NotificationConfirmDto{
         let notificationData:NotificationConfirmDto = {clientName:client.name,placeName:place.name,reservationStart:reservation.reservation_start_date}
-        if(place.booking_mode.type === BookingModeType.DAILY){
+        if(place.booking_mode.type === BookingModeType.HOURLY){
                 notificationData.startHour = reservation.start_time;
                 notificationData.endHour   = reservation.end_time;
                 notificationData.reservationEnd = reservation.reservation_start_date;

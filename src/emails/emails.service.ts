@@ -20,25 +20,31 @@ export class EmailsService {
     to: string,
     subject: string,
     templateName: string,
-    variables: Record<string, string>
+    variables: Record<string, any>
   ) {
     try {
       const templatePath = path.join(process.cwd(), 'src', 'email_templates', templateName);
       let template = await fs.readFile(templatePath, 'utf-8');
-
-      for (const [key, value] of Object.entries(variables)) {
+  
+      const finalVariables = {
+        ...variables,
+        ...(variables.data || {})
+      };
+  
+      for (const [key, value] of Object.entries(finalVariables)) {
         const regex = new RegExp(`{{${key}}}`, 'g');
-        template = template.replace(regex, value);
+        template = template.replace(regex, String(value ?? ''));
       }
+  
       await this.transporter.sendMail({
         from: `"Pro - Reservation" <${process.env.MAIL_USER}>`,
         to,
         subject,
         html: template,
       });
+  
     } catch (error) {
-      //console.log(error);
-      this.logger.error("Email sending error to email : "+ to,error.trace);
+      this.logger.error("Email sending error to email : " + to, error.trace);
       throw new InternalServerErrorException(`Email was not sent to: ${to}`);
     }
   }
