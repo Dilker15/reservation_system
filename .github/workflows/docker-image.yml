@@ -48,6 +48,7 @@ jobs:
   build-image-upload:
       runs-on: ubuntu-latest
       needs: testing
+      if: failure()
       steps:
         - name: building image and uploading test
           run : echo "Docker was build and uploaded successfully"
