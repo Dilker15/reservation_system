@@ -3,7 +3,8 @@
 name: Deployment Pipeline
 
 on: 
-  workflow_dispatch:
+   push:
+      branches: [testing-pipeline]
 
 
   
@@ -47,9 +48,9 @@ jobs:
   build-image-upload:
       runs-on: ubuntu-latest
       steps:
-        - name: building image and uploading
+        - name: building image and uploading test
           run : echo "Docker was build and uploaded successfully"
-          
+
 
 
     
