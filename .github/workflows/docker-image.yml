@@ -10,6 +10,8 @@ on:
   
 jobs:
   testing:
+    outputs:
+       date: ${{steps.id-time.outputs.date}}
     strategy:
         fail-fast: false
         matrix:
@@ -52,9 +54,17 @@ jobs:
       steps:
         - name: Get App Code
           uses: actions/checkout@v4
+        
+        - name: Generate tag
+          id: tag
+          run: echo "TAG=$(date +'%Y%m%d%H%M%S')" >> $GITHUB_ENV
+
+        - name: Login Docker
+          run : docker login -u ${{secrets.DOCKER_USER}} -p ${{secrets.DOCKER_PASSWORD}}
+
 
         - name: build image
-          run : docker built --tag latest .
+          run : docker build -t ${{secrets.DOCKER_USER}}/reservation-api:$TAG .
 
         - name: show image built
           run : docker image ls -a
