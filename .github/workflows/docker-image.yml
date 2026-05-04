@@ -31,7 +31,7 @@ jobs:
 
         - name: Run Testing
           id: id-testing
-          run : npm run test:coverage
+          run : npm run test:cov
 
         - name: Set Timestamp
           id: id-time
