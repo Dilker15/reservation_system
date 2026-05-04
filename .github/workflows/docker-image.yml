@@ -73,8 +73,6 @@ jobs:
             tags: |
               type=raw,value=latest
               type=sha
-              type=ref,event=branch
-              type=ref,event=pr
 
         - name: Build and Push
           uses: docker/build-push-action@v5
