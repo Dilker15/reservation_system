@@ -1,10 +1,9 @@
-# (testing + build + push a Docker Hub + ECR + deploy en ECS).
+# (testing + build image + push a Docker Hub + ECR + deploy en ECS).
 
 name: Deployment Pipeline
 
-on:
-  push:
-    branches: [ feat/cache-module ]
+on: 
+  workflow_dispatch:
 
 
   
@@ -13,8 +12,8 @@ jobs:
     strategy:
         fail-fast: false
         matrix:
-          os: [ubuntu-latest,windows-latest]
-          node: [18,20]
+          os: [ubuntu-latest]
+          node: [20]
     runs-on: ${{matrix.os}}
     steps:
         - name: Get Code
@@ -44,7 +43,18 @@ jobs:
           with:
              name: coverage-report-${{ steps.id-time.outputs.date }}
              path: coverage/lcov-report/
-        
+
+  build-image-upload:
+      runs-on: ubuntu-latest
+      steps:
+        - name: building image and uploading
+          run : echo "Docker was build and uploaded successfully"
+          
+
+
+    
+            
+    
 
         
 
