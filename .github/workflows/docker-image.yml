@@ -66,8 +66,11 @@ jobs:
         - name: build image
           run : docker build -t ${{secrets.DOCKER_USER}}/reservation-api:$TAG .
 
-        - name: show image built
+        - name: Show Image built
           run : docker image ls -a
+
+        - name: Push Image Docker Hub
+          run : docker push ${{secrets.DOCKER_USER}}/reservation-api:$TAG
 
 
 
