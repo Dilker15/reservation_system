@@ -77,7 +77,7 @@ jobs:
             username: ${{ secrets.DOCKER_USER }}
             password: ${{ secrets.DOCKER_PASSWORD }}
 
-        - name: Extract metadata
+        - name: Extract metadata Docker
           id: meta
           uses: docker/metadata-action@v5
           with:
@@ -87,6 +87,12 @@ jobs:
             tags: |
               type=raw,value=latest
               type=sha
+        
+        - name: Get ECR Image URI
+          id: image
+          run: |
+              SHORT_SHA=$(echo $GITHUB_SHA | cut -c1-7)
+              echo "image=${{ steps.login-ecr.outputs.registry }}/${{ env.repo-name }}:sha-$SHORT_SHA" >> $GITHUB_OUTPUT
             
 
         - name: Build and Push to Docker
@@ -99,7 +105,10 @@ jobs:
             cache-to: type=gha,mode=max
         
         - name: Show  (REGISTRY ECR - TAGS )test
-          run : echo "${{steps.login-ecr.outputs.registry}} - ${{steps.meta.outputs.tags}}"
+          run : |
+                echo "Registry: ${{steps.login-ecr.outputs.registry}}"
+                echo "Tag : ${{steps.meta.outputs.tags}}"
+                echo "Registry created NAME : ${{steps.image.outputs.image}}"
 
 
     
