@@ -12,11 +12,13 @@ import Redis from 'ioredis';
       provide:REDIS_CACHE,
       inject:[ConfigService],
       useFactory: (config: ConfigService) => {
-        return new Redis({
-          host: config.get<string>('REDIS_CACHE_HOST'),
-          port: config.get<number>('REDIS_CACHE_PORT'),
-        });
-      },
+        return new Redis(
+          config.get<string>('REDIS_CACHE_URL')!,
+          {
+            maxRetriesPerRequest: null
+          }
+        );
+      }
     },
     CacheRedisService
   ],
