@@ -111,7 +111,7 @@ jobs:
                 echo "Registry created NAME : ${{steps.image.outputs.image}}"
 
 
-        - name: Download task definition and SHOW
+        - name: DOWNLOAD task definition and SHOW
           env:
             TASK_DEFINITION_FAMILY: place-reservations-api-task-definition-family
           run: |
