@@ -103,12 +103,6 @@ jobs:
             tags: ${{ steps.meta.outputs.tags }}
             cache-from: type=gha
             cache-to: type=gha,mode=max
-        
-        - name: Show  (REGISTRY ECR - TAGS ) for testing
-          run : |
-                echo "Registry: ${{steps.login-ecr.outputs.registry}}"
-                echo "Tag : ${{steps.meta.outputs.tags}}"
-                echo "Registry created NAME : ${{steps.image.outputs.image}}"
 
 
         - name: DOWNLOAD task definition and SHOW with ca
@@ -116,8 +110,7 @@ jobs:
             TASK_DEFINITION_FAMILY: place-reservations-api-task-definition-family
           run: |
                 aws ecs describe-task-definition --task-definition ${{ env.TASK_DEFINITION_FAMILY }} --query taskDefinition > task-definition.json
-                ls
-                cat task-definition.json | jq
+                cat task-definition.json | jq '.containerDefinitions[].image'
     
             
     
