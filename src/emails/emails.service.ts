@@ -41,7 +41,7 @@ export class EmailsService {
       }
   
       await this.transporter.sendMail({
-        from: `"Pro - Reservation" <${process.env.MAIL_USER}>`,
+        from: `"Pro - Reservations" <${process.env.MAIL_USER}>`,
         to,
         subject,
         html: template,
