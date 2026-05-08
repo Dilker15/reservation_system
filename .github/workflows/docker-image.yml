@@ -110,7 +110,7 @@ jobs:
             TASK_DEFINITION_FAMILY: place-reservations-api-task-definition-family
           run: |
                 aws ecs describe-task-definition --task-definition ${{ env.TASK_DEFINITION_FAMILY }} --query taskDefinition > task-definition.json
-                cat task-definition.json | jq '.containerDefinitions[].image'
+                cat task-definition.json | jq '.containerDefinitions[] | {name, image}'
     
             
     
