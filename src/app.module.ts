@@ -50,7 +50,6 @@ import { CacheRedisModule } from './cache-redis/cache-redis.module';
       inject: [ConfigService],
       useFactory: (config: ConfigService) => {
         const url = config.get<string>('REDIS_URL')!;
-    
         return {
           connection: {
             url

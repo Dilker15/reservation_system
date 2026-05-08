@@ -110,7 +110,7 @@ jobs:
             cache-to: type=gha,mode=max
 
 
-        - name: Download task definition
+        - name: Download task definition ecs
           env:
             TASK_DEFINITION_FAMILY: ${{env.repo-name}}-task-definition-family
           run: |
