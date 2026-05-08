@@ -67,7 +67,7 @@ jobs:
               aws-region: ${{ vars.AWS_REGION }}
           
         - name: Log in to Amazon ECR
-          id: login-ecr
+          id: id-login-ecr
           uses: aws-actions/amazon-ecr-login@v2
 
 
@@ -78,41 +78,67 @@ jobs:
             password: ${{ secrets.DOCKER_PASSWORD }}
 
         - name: Extract metadata Docker
-          id: meta
+          id: id-meta
           uses: docker/metadata-action@v5
           with:
             images: |
                     ${{ secrets.DOCKER_USER }}/${{ env.repo-name }}
-                    ${{ steps.login-ecr.outputs.registry }}/${{ env.repo-name }}
+                    ${{ steps.id-login-ecr.outputs.registry }}/${{ env.repo-name }}
             tags: |
               type=raw,value=latest
               type=sha
+
         
         - name: Get ECR Image URI
           id: image
           run: |
               SHORT_SHA=$(echo $GITHUB_SHA | cut -c1-7)
-              echo "image=${{ steps.login-ecr.outputs.registry }}/${{ env.repo-name }}:sha-$SHORT_SHA" >> $GITHUB_OUTPUT
+              echo "image=${{ steps.id-login-ecr.outputs.registry }}/${{ env.repo-name }}:sha-$SHORT_SHA" >> $GITHUB_OUTPUT
             
+        - name: Set Timestamp
+          id: id-time
+          run: echo "date=$(date +'%Y-%m-%d_%H-%M-%S')" >> $GITHUB_OUTPUT
+
 
         - name: Build / Push to Docker and ECR
           uses: docker/build-push-action@v5
           with:
             context: .
             push: true
-            tags: ${{ steps.meta.outputs.tags }}
+            tags: ${{ steps.id-meta.outputs.tags }}
             cache-from: type=gha
             cache-to: type=gha,mode=max
 
 
-        - name: DOWNLOAD task definition and SHOW with ca
+        - name: Download task definition
           env:
-            TASK_DEFINITION_FAMILY: place-reservations-api-task-definition-family
+            TASK_DEFINITION_FAMILY: ${{env.repo-name}}-task-definition-family
           run: |
                 aws ecs describe-task-definition --task-definition ${{ env.TASK_DEFINITION_FAMILY }} --query taskDefinition > task-definition.json
-                cat task-definition.json | jq '.containerDefinitions[] | {name, image}'
     
-            
+          
+
+        - name: Replace image ID in TaskDefintion downloaded from ECS
+          id: id-task-def
+          uses: aws-actions/amazon-ecs-render-task-definition@v1
+          with:
+              task-definition: task-definition.json
+              container-name: ${{env.repo-name}}-container
+              image: ${{ steps.image.outputs.image }}
+              environment-variables: |
+                    DEPLOYED_TOKEN=${{ github.sha }}
+                    DEPLOYED_AT=${{ steps.id-time.outputs.date }}
+
+
+        - name: Deploy task definition updated and update Service
+          uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+          with:
+            task-definition: ${{ steps.id-task-def.outputs.task-definition }}
+            service: ${{env.repo-name}}-service
+            cluster: ${{ env.repo-name }}
+            wait-for-service-stability: true
+
+      
     
 
         
