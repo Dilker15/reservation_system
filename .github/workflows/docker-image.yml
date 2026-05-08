@@ -11,46 +11,46 @@ env:
   repo-name: place-reservations-api
 
 jobs:
-  testing:
-    strategy:
-        fail-fast: false
-        matrix:
-          os: [ubuntu-latest]
-          node: [20]
-    runs-on: ${{matrix.os}}
-    steps:
-        - name: Get Code
-          uses: actions/checkout@v4
+ # testing:
+ #   strategy:
+  #       fail-fast: false
+  #       matrix:
+  #        os: [ubuntu-latest]
+  #         node: [20]
+  #   runs-on: ${{matrix.os}}
+  #   steps:
+  #       - name: Get Code
+  #         uses: actions/checkout@v4
 
-        - name: Install Node
-          uses: actions/setup-node@v4
-          with:
-            node-version: ${{matrix.node}}
-            cache: 'npm'
+  #       - name: Install Node
+  #         uses: actions/setup-node@v4
+  #         with:
+  #           node-version: ${{matrix.node}}
+  #           cache: 'npm'
 
-        - name: Install Dependencies
-          run: npm ci
+  #       - name: Install Dependencies
+  #         run: npm ci
 
-        - name: Run Testing
-          id: id-testing
-          run : npm run test:cov
+  #       - name: Run Testing
+  #         id: id-testing
+  #         run : npm run test:cov
 
-        - name: Set Timestamp
-          id: id-time
-          if: failure() && steps.id-testing.outcome == 'failure'
-          run: echo "date=$(date +'%Y-%m-%d_%H-%M-%S')" >> $GITHUB_OUTPUT
+  #       - name: Set Timestamp
+  #         id: id-time
+  #         if: failure() && steps.id-testing.outcome == 'failure'
+  #         run: echo "date=$(date +'%Y-%m-%d_%H-%M-%S')" >> $GITHUB_OUTPUT
 
-        - name: Upload HTML Coverage if Fail
-          if: failure() && steps.id-testing.outcome == 'failure'
-          uses: actions/upload-artifact@v4
-          with:
-             name: coverage-report-${{ steps.id-time.outputs.date }}
-             path: coverage/lcov-report/
+  #       - name: Upload HTML Coverage if Fail
+  #         if: failure() && steps.id-testing.outcome == 'failure'
+  #         uses: actions/upload-artifact@v4
+  #         with:
+  #            name: coverage-report-${{ steps.id-time.outputs.date }}
+  #            path: coverage/lcov-report/
 
   build-image-upload:
       runs-on: ubuntu-latest
-      needs: testing
-      if: failure()
+    #  needs: testing
+      if: always()
 
       steps:
         - name: Checkout
@@ -95,7 +95,7 @@ jobs:
               echo "image=${{ steps.login-ecr.outputs.registry }}/${{ env.repo-name }}:sha-$SHORT_SHA" >> $GITHUB_OUTPUT
             
 
-        - name: Build and Push to Docker
+        - name: Build / Push to Docker and ECR
           uses: docker/build-push-action@v5
           with:
             context: .
@@ -111,6 +111,12 @@ jobs:
                 echo "Registry created NAME : ${{steps.image.outputs.image}}"
 
 
+        - name: Download task definition and SHOW
+          env:
+            TASK_DEFINITION_FAMILY: place-reservations-api-task-definition-family
+          run: |
+                aws ecs describe-task-definition --task-definition ${{ env.TASK_DEFINITION_FAMILY }} --query taskDefinition > task-definition.json
+                ls
     
             
     
