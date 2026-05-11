@@ -130,7 +130,7 @@ jobs:
                     DEPLOYED_AT=${{ steps.id-time.outputs.date }}
 
 
-        - name: Deploy task definition updated and update Service
+        - name: Deploy task definition updated and update Service s3
           uses: aws-actions/amazon-ecs-deploy-task-definition@v2
           with:
             task-definition: ${{ steps.id-task-def.outputs.task-definition }}
