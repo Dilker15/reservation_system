@@ -61,7 +61,7 @@ export class PaymentAccountsService {
           token_type:data.type_token
         });
     }catch(error){
-       console.log(error);
+       //console.log(error);
        throw new InternalServerErrorException("Unexpected error");
     }
   }

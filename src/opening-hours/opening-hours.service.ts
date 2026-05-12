@@ -30,7 +30,7 @@ export class OpeningHoursService {
     }
     openingHour.close_time = updateOpeningHourDto.close_time;
     openingHour.open_time = updateOpeningHourDto.open_time;
-    this.openingRepo.save(openingHour);
+    await this.openingRepo.save(openingHour);
     this.logger.log("opening hour updated");
     return this.parseOpeningHourResponseDto(openingHour);
   }

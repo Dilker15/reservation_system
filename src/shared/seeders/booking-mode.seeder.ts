@@ -12,7 +12,7 @@ export async function seedBookingMode(data:DataSource):Promise<void>{
     for(const mode of bookingModesData){
        await repo.save({...mode});
     }
-    console.log("seeder booking-mode created");
+    //console.log("seeder booking-mode created");
 }
 
 

@@ -6,6 +6,7 @@ import { City } from './entities/city.entity';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { BadRequestException } from '@nestjs/common';
 import { countries } from './data/countries';
+import { AppLoggerService } from 'src/logger/logger.service';
 
 describe('CountriesService', () => {
   let service: CountriesService;
@@ -21,6 +22,12 @@ describe('CountriesService', () => {
       innerJoinAndSelect:jest.fn().mockReturnThis(),
       getOne:jest.fn()
   } as any;
+
+  const mockLogger:Partial<jest.Mocked<AppLoggerService>> = {
+    withContext:jest.fn().mockReturnValue({
+        warn:jest.fn(),  
+    })
+  }
 
 
   beforeEach(async () => {
@@ -48,6 +55,10 @@ describe('CountriesService', () => {
         {
           provide:getRepositoryToken(City),
           useValue:mockCityRepo,
+        },
+        {
+          provide:AppLoggerService,
+          useValue:mockLogger,
         }
       ],
 
@@ -159,8 +170,14 @@ describe('CountriesService', () => {
     expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith("country.id = :id_country", { id_country });
     expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith("country.is_active = true");
     expect(result).toEqual(mockCity)
-    
+  });
 
+  it("should throw badRequest city not found",async()=>{
+      const id_city="uuid-city";
+      const id_country = "uuid-country";
+
+      mockQueryBuilder.getOne.mockReturnValueOnce(null);
+      await expect(service.findCity(id_country,id_city)).rejects.toThrow(BadRequestException);
   });
 
 

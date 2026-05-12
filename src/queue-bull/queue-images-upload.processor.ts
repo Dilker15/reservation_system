@@ -57,7 +57,7 @@ export class ImageUploadProcessor extends WorkerHost{
 
 
     private async updateImages(job:Job){
-        const {place,images,owner} = job.data;
+        const {place,images} = job.data;
         try{
             const imagesUploaded = await this.uploadImageServices.uploadImages(images);
             await this.placeService.updateImagesPlace(place,imagesUploaded);

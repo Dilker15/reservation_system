@@ -2,6 +2,7 @@ import { PipeTransform, Injectable, BadRequestException } from '@nestjs/common';
 
 @Injectable()
 export class ParseAndValidateJsonPipe implements PipeTransform {
+  
   transform(value: any) {
     if (!value) {
       throw new BadRequestException('opening_hours is required');

@@ -68,7 +68,7 @@ export class StripeStrategy implements IPaymentProvider{
         return this.transformPreferenceResponse(session);
     
       } catch (error) {
-        console.error(error);
+        //console.error(error);
         throw new InternalServerErrorException(
           'Error creating Stripe Checkout Session'
         );
@@ -84,7 +84,6 @@ export class StripeStrategy implements IPaymentProvider{
         if(!payment || payment.status !== 'succeeded'){
           return null;
         }
-        console.log("PAYMENT DATA STRIPE ::: ",payment);
         return this.buildPaymentResult(payment);
     }
 
