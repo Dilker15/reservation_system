@@ -16,7 +16,7 @@ export class ImageLocalService{
             const savedPaths: string[] = [];
           
           for (const image of images) {
-            const filename:string = `${uuidv4}}-${image.originalname}`;
+            const filename:string = `${uuidv4()}}-${image.originalname}`;
             const filepath = join(this.pathImages, filename);
             await fs.writeFile(filepath, image.buffer);
             savedPaths.push(filename);

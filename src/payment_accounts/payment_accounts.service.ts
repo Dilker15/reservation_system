@@ -33,13 +33,12 @@ export class PaymentAccountsService {
     if (userHasAccountProvider) {
       throw new BadRequestException(`You are connected with this provider ${provider}`);
     }
-  
     const state = await this.stateService.create(currenAdmin.id);
     const strategy = this.strategyFactory.getStrategy(provider);
     return strategy.generateAuthUrl(state);
     }catch(error){
-      console.log(error);
-      return "";
+      //console.log(error);
+      throw new InternalServerErrorException();
     }
    
   }
@@ -61,7 +60,7 @@ export class PaymentAccountsService {
           token_type:data.type_token
         });
     }catch(error){
-       //console.log(error);
+  
        throw new InternalServerErrorException("Unexpected error");
     }
   }
@@ -74,7 +73,7 @@ export class PaymentAccountsService {
        });
        return accounts.map(acc => ({status: acc.status,provider: acc.provider,id:acc.id}));
     }catch(error){
-      console.log(error);
+  
       throw error;
     }
   }
@@ -98,7 +97,7 @@ export class PaymentAccountsService {
        account.status=PAYMENT_ACCOUNTS_STATUS.INACTIVE;
        await this.paymentAccountRepo.save(account);
     }catch(err){
-       console.log(err);
+
        throw err;
     }
   }

@@ -10,6 +10,7 @@ import { Repository } from 'typeorm';
 import { User } from 'src/users/entities/user.entity';
 import { PROVIDERS } from 'src/common/Interfaces';
 import { InternalServerErrorException } from '@nestjs/common';
+import { BcryptService } from 'src/common/helpers/bcryp';
 
 describe('PaymentAccountsService', () => {
   let service: PaymentAccountsService;
@@ -17,6 +18,7 @@ describe('PaymentAccountsService', () => {
   let strategyFactory: OAuthFactory;
   let stateService: StatesService;
   let tokenEncryptService: TokenEncrytionService;
+  let bcrypService:BcryptService;
 
   const mockUser = { id: 1 } as any;
   const mockStrategy: Partial<OAuthStrategy> = {
@@ -24,6 +26,10 @@ describe('PaymentAccountsService', () => {
     exchangeCodeForToken: jest.fn(),
   };
 
+  const mockBcrypSer = {
+    hashPassword:jest.fn(),
+    verifyPassword:jest.fn()
+  }
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -45,8 +51,12 @@ describe('PaymentAccountsService', () => {
         },
         {
           provide: getRepositoryToken(PaymentAccount),
-          useValue: { save: jest.fn() },
+          useValue: { save: jest.fn(),findOneBy:jest.fn().mockResolvedValue(null) },
         },
+        {
+          provide:BcryptService,
+          useValue:mockBcrypSer,
+        }
       ],
     }).compile();
 
@@ -58,12 +68,12 @@ describe('PaymentAccountsService', () => {
   });
 
   describe('createUrlAuth', () => {
-    it('should create a state and return auth URL', async () => {
+    it('should create an state and return auth URL', async () => {
       (stateService.create as jest.Mock).mockResolvedValue('state123');
       (mockStrategy.generateAuthUrl as jest.Mock).mockReturnValue('https://provider/oauth');
 
       const result = await service.createUrlAuth(mockUser, PROVIDERS.MP);
-
+      
       expect(stateService.create).toHaveBeenCalledWith(mockUser.id);
       expect(strategyFactory.getStrategy).toHaveBeenCalledWith(PROVIDERS.MP);
       expect(mockStrategy.generateAuthUrl).toHaveBeenCalledWith('state123');

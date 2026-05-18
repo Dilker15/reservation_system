@@ -7,6 +7,8 @@ import { Repository, DataSource } from 'typeorm';
 import { BookingStrategyFactory } from './strategies/BookingStrategyFactory';
 import { InternalServerErrorException } from '@nestjs/common';
 import { RESERVATION_STATUS } from 'src/common/Interfaces';
+import { EnqueueReservationsJobService } from 'src/queue-bull/enqueue-reservations-job.services';
+import { AppLoggerService } from 'src/logger/logger.service';
 
 describe('ReservationService', () => {
   let service: ReservationService;
@@ -40,6 +42,16 @@ describe('ReservationService', () => {
     transaction: jest.fn(async (cb) => cb(mockManager)),
   };
 
+  const mockEnqueJob = {
+    enqueScheduleExpiration:jest.fn()
+  }
+
+  const mockLogger = {
+    withContext: jest.fn().mockReturnThis(), 
+    log: jest.fn(),
+    error: jest.fn(),
+};
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -51,6 +63,12 @@ describe('ReservationService', () => {
           provide: getRepositoryToken(Reservation),
           useValue: mockReservationRepo,
         },
+        {
+          provide:EnqueueReservationsJobService,useValue:mockEnqueJob,
+        },
+        {
+          provide:AppLoggerService,useValue:mockLogger
+        }
       ],
     }).compile();
 
@@ -98,8 +116,8 @@ describe('ReservationService', () => {
       expect(mockStrategy.buildReservation).toHaveBeenCalled();
 
 
-      expect(result.reservation.user).toBeUndefined();
-      expect(result.reservation.status).toBe(RESERVATION_STATUS.CREATED);
+      expect(result.message).toBeDefined();
+      expect(result.reservationId).toBe(reservationEntity.id);
     });
 
 

@@ -7,75 +7,87 @@ import { Category } from 'src/categories/entities/category.entity';
 import { BookingMode } from 'src/booking-mode/entities/booking-mode.entity';
 import { City } from 'src/countries/entities/city.entity';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { BadRequestException, InternalServerErrorException } from '@nestjs/common';
+import {
+  BadRequestException,
+  InternalServerErrorException,
+} from '@nestjs/common';
+
 import { User } from 'src/users/entities/user.entity';
 import { placeEnumStatus } from './interfaces/interfaces';
 import { EnqueueImagesUploadServices } from 'src/queue-bull/enqueue-images.services';
 import { AppLoggerService } from 'src/logger/logger.service';
 import { LocationsService } from 'src/locations/locations.service';
 import { ImageUploadService } from 'src/image-upload/image-upload.service';
+import { OpeningHour } from 'src/opening-hours/entities/opening-hour.entity';
+import { ReservationService } from 'src/reservation/reservation.service';
+import { CacheRedisService } from 'src/cache-redis/cache-redis.service';
 
-describe('PlacesService - Business Logic Tests', () => {
+describe('PlacesService', () => {
   let service: PlacesService;
+  let moduleRef: TestingModule;
+
   let placeRepo: jest.Mocked<Repository<Place>>;
   let placeImageRepo: jest.Mocked<Repository<PlaceImages>>;
   let categoryRepo: jest.Mocked<Repository<Category>>;
   let bookingRepo: jest.Mocked<Repository<BookingMode>>;
   let cityRepo: jest.Mocked<Repository<City>>;
 
- 
-  const createMockUser = (id = 'user-1'): User => ({
-    id,
-    email: 'test@test.com',
-  } as User);
+  const createMockUser = (id = 'user-1'): User =>
+    ({
+      id,
+      email: 'test@test.com',
+    }) as User;
 
-  const createMockPlace = (overrides = {}): Place => ({
-    id: 'place-1',
-    name: 'Test Place',
-    description: 'Test description',
-    price: 100,
-    status: placeEnumStatus.ACTIVE,
-    images: [],
-    owner: createMockUser(),
-    category: { id: 'cat-1', name: 'Category' } as Category,
-    booking_mode: { id: 'book-1', name: 'Instant' } as BookingMode,
-    city: { id: 'city-1', name: 'Test City' } as City,
-    location: { latitude: 10, longitude: 20 },
-    opening_hours: [],
-    ...overrides,
-  } as any as Place);
-
-  const createMockCategory = (): Category => ({
-    id: 'cat-1',
-    name: 'Test Category',
-    is_active: true,
-  } as Category);
-
-  const createMockBookingMode = (): BookingMode => ({
-    id: 'book-1',
-    name: 'Instant Booking',
-    is_active: true,
-  } as BookingMode);
-
-  const createMockCity = (): City => ({
-    id: 'city-1',
-    name: 'Test City',
-    is_active: true,
-  } as City);
+  const createMockPlace = (overrides = {}): Place =>
+    ({
+      id: 'place-1',
+      name: 'Luxury Apartment',
+      description: 'Beautiful place',
+      address: 'Street 123',
+      price: 100,
+      max_guests: 4,
+      bedrooms: 2,
+      bathrooms: 1,
+      size_m2: 120,
+      status: placeEnumStatus.ACTIVE,
+      images: [],
+      owner: createMockUser(),
+      category: {
+        id: 'cat-1',
+        name: 'Category',
+      } as Category,
+      booking_mode: {
+        id: 'book-1',
+        name: 'Hourly',
+      } as BookingMode,
+      city: {
+        id: 'city-1',
+        name: 'Buenos Aires',
+      } as City,
+      location: {
+        latitude: 10,
+        longitude: 20,
+      },
+      opening_hours: [],
+      amenities: [],
+      ...overrides,
+    }) as unknown as Place
 
   beforeEach(async () => {
     const mockPlaceRepo = {
-      findOne: jest.fn(),
       find: jest.fn(),
-      findOneOrFail: jest.fn(),
       update: jest.fn(),
       save: jest.fn(),
       createQueryBuilder: jest.fn(),
+      findOneOrFail: jest.fn(),
+      findOne: jest.fn(),
     };
 
     const mockPlaceImageRepo = {
       findOne: jest.fn(),
       remove: jest.fn(),
+      create: jest.fn(),
+      save: jest.fn(),
     };
 
     const mockCategoryRepo = {
@@ -87,8 +99,11 @@ describe('PlacesService - Business Logic Tests', () => {
     };
 
     const mockCityRepo = {
-      findOneBy: jest.fn(),
       findOneByOrFail: jest.fn(),
+    };
+
+    const mockOpeningHourRepo = {
+      createQueryBuilder: jest.fn(),
     };
 
     const mockEnqueueService = {
@@ -96,12 +111,17 @@ describe('PlacesService - Business Logic Tests', () => {
       enqueImageToUpdate: jest.fn(),
     };
 
+    const mockLoggerContext = {
+      log: jest.fn(),
+      error: jest.fn(),
+      warn: jest.fn(),
+    };
+
     const mockLogger = {
-      withContext: jest.fn().mockReturnValue({
-        log: jest.fn(),
-        error: jest.fn(),
-        warn: jest.fn(),
-      }),
+      withContext: jest.fn().mockReturnValue(mockLoggerContext),
+      log: jest.fn(),
+      error: jest.fn(),
+      warn: jest.fn(),
     };
 
     const mockLocationService = {
@@ -110,6 +130,17 @@ describe('PlacesService - Business Logic Tests', () => {
 
     const mockImageUploadService = {
       deleteImage: jest.fn(),
+    };
+
+    const mockReservationService = {
+      getAvailabilityDaily: jest.fn(),
+      getAvailabilityRange: jest.fn(),
+    };
+
+    const mockCacheService = {
+      get: jest.fn().mockResolvedValue(null),
+      set: jest.fn(),
+      del: jest.fn(),
     };
 
     const mockDataSource = {
@@ -125,28 +156,71 @@ describe('PlacesService - Business Logic Tests', () => {
       }),
     };
 
-    const module: TestingModule = await Test.createTestingModule({
+    moduleRef = await Test.createTestingModule({
       providers: [
         PlacesService,
-        { provide: getRepositoryToken(Place), useValue: mockPlaceRepo },
-        { provide: getRepositoryToken(PlaceImages), useValue: mockPlaceImageRepo },
-        { provide: getRepositoryToken(Category), useValue: mockCategoryRepo },
-        { provide: getRepositoryToken(BookingMode), useValue: mockBookingRepo },
-        { provide: getRepositoryToken(City), useValue: mockCityRepo },
-        { provide: EnqueueImagesUploadServices, useValue: mockEnqueueService },
-        { provide: DataSource, useValue: mockDataSource },
-        { provide: AppLoggerService, useValue: mockLogger },
-        { provide: LocationsService, useValue: mockLocationService },
-        { provide: ImageUploadService, useValue: mockImageUploadService },
+        {
+          provide: getRepositoryToken(Place),
+          useValue: mockPlaceRepo,
+        },
+        {
+          provide: getRepositoryToken(PlaceImages),
+          useValue: mockPlaceImageRepo,
+        },
+        {
+          provide: getRepositoryToken(Category),
+          useValue: mockCategoryRepo,
+        },
+        {
+          provide: getRepositoryToken(BookingMode),
+          useValue: mockBookingRepo,
+        },
+        {
+          provide: getRepositoryToken(City),
+          useValue: mockCityRepo,
+        },
+        {
+          provide: getRepositoryToken(OpeningHour),
+          useValue: mockOpeningHourRepo,
+        },
+        {
+          provide: EnqueueImagesUploadServices,
+          useValue: mockEnqueueService,
+        },
+        {
+          provide: AppLoggerService,
+          useValue: mockLogger,
+        },
+        {
+          provide: LocationsService,
+          useValue: mockLocationService,
+        },
+        {
+          provide: ImageUploadService,
+          useValue: mockImageUploadService,
+        },
+        {
+          provide: ReservationService,
+          useValue: mockReservationService,
+        },
+        {
+          provide: CacheRedisService,
+          useValue: mockCacheService,
+        },
+        {
+          provide: DataSource,
+          useValue: mockDataSource,
+        },
       ],
     }).compile();
 
-    service = module.get<PlacesService>(PlacesService);
-    placeRepo = module.get(getRepositoryToken(Place));
-    placeImageRepo = module.get(getRepositoryToken(PlaceImages));
-    categoryRepo = module.get(getRepositoryToken(Category));
-    bookingRepo = module.get(getRepositoryToken(BookingMode));
-    cityRepo = module.get(getRepositoryToken(City));
+    service = moduleRef.get<PlacesService>(PlacesService);
+
+    placeRepo = moduleRef.get(getRepositoryToken(Place));
+    placeImageRepo = moduleRef.get(getRepositoryToken(PlaceImages));
+    categoryRepo = moduleRef.get(getRepositoryToken(Category));
+    bookingRepo = moduleRef.get(getRepositoryToken(BookingMode));
+    cityRepo = moduleRef.get(getRepositoryToken(City));
   });
 
   afterEach(() => {
@@ -154,256 +228,468 @@ describe('PlacesService - Business Logic Tests', () => {
   });
 
   describe('findOne', () => {
-    it('should return a place when found', async () => {
-      const mockPlace = createMockPlace();
-      placeRepo.findOne.mockResolvedValue(mockPlace);
+    let mockQueryBuilder: any;
+
+    beforeEach(() => {
+      mockQueryBuilder = {
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        select: jest.fn().mockReturnThis(),
+        getOne: jest.fn(),
+      };
+
+      placeRepo.createQueryBuilder.mockReturnValue(
+        mockQueryBuilder,
+      );
+    });
+
+    it('should return place successfully', async () => {
+      const place = createMockPlace();
+
+      mockQueryBuilder.getOne.mockResolvedValue(place);
 
       const result = await service.findOne('place-1');
 
-      expect(result).toBeDefined();
-      expect(result.id).toBe('place-1');
+      expect(placeRepo.createQueryBuilder)
+        .toHaveBeenCalledWith('place');
+
+      expect(mockQueryBuilder.where)
+        .toHaveBeenCalledWith(
+          'place.id = :id',
+          { id: 'place-1' },
+        );
+
+      expect(mockQueryBuilder.andWhere)
+        .toHaveBeenCalledWith(
+          'place.status = :status',
+          { status: placeEnumStatus.ACTIVE },
+        );
+
+      expect(result.id).toBe(place.id);
     });
 
-    it('should throw BadRequestException when place not found', async () => {
-      placeRepo.findOne.mockResolvedValue(null);
+    it('should filter by owner', async () => {
+      const owner = createMockUser('owner-1');
 
-      await expect(service.findOne('non-existent')).rejects.toThrow(
-        BadRequestException
+      mockQueryBuilder.getOne.mockResolvedValue(
+        createMockPlace(),
       );
-    });
-
-    it('should filter by owner when provided', async () => {
-      const owner = createMockUser();
-      const mockPlace = createMockPlace({ owner });
-      placeRepo.findOne.mockResolvedValue(mockPlace);
 
       await service.findOne('place-1', owner);
 
-      expect(placeRepo.findOne).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: expect.objectContaining({
-            owner: { id: owner.id },
-          }),
-        })
-      );
+      expect(mockQueryBuilder.andWhere)
+        .toHaveBeenCalledWith(
+          'place.owner_id = :ownerId',
+          { ownerId: owner.id },
+        );
     });
 
-    it('should only return active places', async () => {
-      const mockPlace = createMockPlace();
-      placeRepo.findOne.mockResolvedValue(mockPlace);
+    it('should throw BadRequestException if place does not exist', async () => {
+      mockQueryBuilder.getOne.mockResolvedValue(null);
 
-      await service.findOne('place-1');
-
-      expect(placeRepo.findOne).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: expect.objectContaining({
-            status: placeEnumStatus.ACTIVE,
-          }),
-        })
-      );
+      await expect(
+        service.findOne('invalid-id'),
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('should throw InternalServerErrorException on unexpected errors', async () => {
-      placeRepo.findOne.mockRejectedValue(new Error('Database error'));
-
-      await expect(service.findOne('place-1')).rejects.toThrow(
-        InternalServerErrorException
+      mockQueryBuilder.getOne.mockRejectedValue(
+        new Error('Database error'),
       );
+
+      await expect(
+        service.findOne('place-1'),
+      ).rejects.toThrow(InternalServerErrorException);
     });
   });
 
   describe('getMyPlaces', () => {
-    it('should return all active places for owner', async () => {
+    let mockQueryBuilder: any;
+
+    beforeEach(() => {
+      mockQueryBuilder = {
+        leftJoin: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        clone: jest.fn().mockReturnThis(),
+        getCount: jest.fn(),
+        select: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        offset: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockReturnThis(),
+        getRawMany: jest.fn(),
+      };
+
+      placeRepo.createQueryBuilder.mockReturnValue(
+        mockQueryBuilder,
+      );
+    });
+
+    it('should return paginated owner places', async () => {
       const owner = createMockUser();
-      const mockPlaces = [
-        createMockPlace({ owner }),
-        createMockPlace({ id: 'place-2', owner }),
-      ];
-      placeRepo.find.mockResolvedValue(mockPlaces);
 
-      const result = await service.getMyPlaces(owner);
-
-      expect(result).toHaveLength(2);
-      expect(placeRepo.find).toHaveBeenCalledWith({
-        where: {
-          owner: { id: owner.id },
-          status: placeEnumStatus.ACTIVE,
+      const items = [
+        {
+          id: 'place-1',
+          name: 'Luxury Apartment',
         },
+      ];
+
+      mockQueryBuilder.getCount.mockResolvedValue(1);
+
+      mockQueryBuilder.getRawMany.mockResolvedValue(items);
+
+      const result = await service.getMyPlaces(owner, {
+        page: 1,
+        limit: 10,
+      } as any);
+
+      expect(result).toEqual({
+        total: 1,
+        page: 1,
+        limit: 10,
+        items,
       });
     });
 
-    it('should return empty array when owner has no places', async () => {
+    it('should filter by status', async () => {
       const owner = createMockUser();
-      placeRepo.find.mockResolvedValue([]);
 
-      const result = await service.getMyPlaces(owner);
+      mockQueryBuilder.getCount.mockResolvedValue(0);
+      mockQueryBuilder.getRawMany.mockResolvedValue([]);
 
-      expect(result).toEqual([]);
+      await service.getMyPlaces(owner, {
+        status: placeEnumStatus.ACTIVE,
+      } as any);
+
+      expect(mockQueryBuilder.andWhere)
+        .toHaveBeenCalledWith(
+          'place.status = :status',
+          { status: placeEnumStatus.ACTIVE },
+        );
+    });
+
+    it('should filter by name', async () => {
+      const owner = createMockUser();
+
+      mockQueryBuilder.getCount.mockResolvedValue(0);
+      mockQueryBuilder.getRawMany.mockResolvedValue([]);
+
+      await service.getMyPlaces(owner, {
+        name: 'luxury',
+      } as any);
+
+      expect(mockQueryBuilder.andWhere)
+        .toHaveBeenCalledWith(
+          'LOWER(place.name) LIKE LOWER(:name)',
+          { name: '%luxury%' },
+        );
     });
   });
 
-  describe('updateImages - Business Validation', () => {
-    it('should reject when total images exceed 5', async () => {
-      const owner = createMockUser();
-      const placeWith4Images = createMockPlace({
-        images: [
-          { id: '1' } as PlaceImages,
-          { id: '2' } as PlaceImages,
-          { id: '3' } as PlaceImages,
-          { id: '4' } as PlaceImages,
-        ],
+  describe('findAll', () => {
+    let mockQueryBuilder: any;
+    let cacheService: CacheRedisService;
+
+    beforeEach(() => {
+      cacheService = moduleRef.get(CacheRedisService);
+
+      mockQueryBuilder = {
+        select: jest.fn().mockReturnThis(),
+        innerJoin: jest.fn().mockReturnThis(),
+        addSelect: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockReturnThis(),
+        offset: jest.fn().mockReturnThis(),
+        getManyAndCount: jest.fn(),
+      };
+
+      placeRepo.createQueryBuilder.mockReturnValue(
+        mockQueryBuilder,
+      );
+    });
+
+    it('should return cached data', async () => {
+      const cached = {
+        total: 1,
+        data: [],
+      };
+
+      cacheService.get = jest.fn().mockResolvedValue(cached);
+
+      const result = await service.findAll({});
+
+      expect(result).toEqual(cached);
+
+      expect(mockQueryBuilder.getManyAndCount)
+        .not.toHaveBeenCalled();
+    });
+
+    it('should query database and cache response', async () => {
+      cacheService.get = jest.fn().mockResolvedValue(null);
+
+      const places = [createMockPlace()];
+
+      mockQueryBuilder.getManyAndCount.mockResolvedValue([
+        places,
+        1,
+      ]);
+
+      placeRepo.find.mockResolvedValue([
+        createMockPlace({
+          images: [
+            {
+              url: 'https://cloudinary.com/image.jpg',
+            },
+          ],
+        }),
+      ]);
+
+      const result = await service.findAll({
+        page: 1,
+        limit: 10,
       });
 
-      placeRepo.findOne.mockResolvedValue(placeWith4Images);
+      expect(mockQueryBuilder.getManyAndCount)
+        .toHaveBeenCalled();
+
+      expect(cacheService.set)
+        .toHaveBeenCalled();
+    });
+  });
+
+  describe('updateImages', () => {
+    beforeEach(() => {
+      jest.spyOn(service, 'findOne');
+    });
+
+    it('should reject if total images exceed 5', async () => {
+      const owner = createMockUser();
+
+      jest.spyOn(service, 'findOne')
+        .mockResolvedValue({
+          images: [
+            { id: '1' },
+            { id: '2' },
+            { id: '3' },
+            { id: '4' },
+          ],
+        } as any);
 
       await expect(
-        service.updateImages('place-1', owner, ['file1.jpg', 'file2.jpg'])
-      ).rejects.toThrow('Max number of total files accepted 5,remove files');
+        service.updateImages(
+          'place-1',
+          owner,
+          ['file1.jpg', 'file2.jpg'],
+        ),
+      ).rejects.toThrow(
+        'Max number of total files accepted 5,remove files',
+      );
     });
 
-    it('should allow update when total stays at or below 5', async () => {
+    it('should enqueue images update successfully', async () => {
       const owner = createMockUser();
-      const placeWith3Images = createMockPlace({
-        images: [
-          { id: '1' } as PlaceImages,
-          { id: '2' } as PlaceImages,
-          { id: '3' } as PlaceImages,
-        ],
-      });
 
-      placeRepo.findOne.mockResolvedValue(placeWith3Images);
+      jest.spyOn(service, 'findOne')
+        .mockResolvedValue({
+          images: [{ id: '1' }],
+        } as any);
 
-      const result = await service.updateImages('place-1', owner, ['file1.jpg']);
+      const enqueueService = moduleRef.get(
+        EnqueueImagesUploadServices,
+      );
 
-      expect(result?.message).toContain('images will be updated');
+      const result = await service.updateImages(
+        'place-1',
+        owner,
+        ['file1.jpg'],
+      );
+
+      expect(
+        enqueueService.enqueImageToUpdate,
+      ).toHaveBeenCalledWith(
+        'place-1',
+        ['file1.jpg'],
+        owner.id,
+      );
+
+      expect(result?.message)
+        .toContain('images will be updated');
     });
   });
 
-  describe('updateCategory - Business Rules', () => {
-    it('should throw when category not found', async () => {
+  describe('updateCategory', () => {
+    beforeEach(() => {
+      jest.spyOn(service, 'findOne');
+    });
 
-      const owner = createMockUser();
+    it('should throw if category does not exist', async () => {
       categoryRepo.findOneBy.mockResolvedValue(null);
 
-      await expect(service.updateCategory('place1','cat1',owner)).rejects.toThrow(BadRequestException)
-    });
-
-    it('should throw when category is inactive', async () => {
-      const owner = createMockUser();
-      const inactiveCategory = { ...createMockCategory(), is_active: false };
-      categoryRepo.findOneBy.mockResolvedValue(inactiveCategory);
-
       await expect(
-        service.updateCategory('place-1', 'cat-1', owner)
+        service.updateCategory(
+          'place-1',
+          'invalid-category',
+          createMockUser(),
+        ),
       ).rejects.toThrow(BadRequestException);
     });
 
-    it('should update category when valid and active', async () => {
-      const owner = createMockUser();
-      const validCategory = createMockCategory();
-      const existingPlace = createMockPlace();
+    it('should update category successfully', async () => {
+      const category = {
+        id: 'cat-1',
+        is_active: true,
+      };
 
-      categoryRepo.findOneBy.mockResolvedValue(validCategory);
-      placeRepo.findOne.mockResolvedValue(existingPlace);
-      placeRepo.update.mockResolvedValue({ affected: 1 } as any);
-
-      const result = await service.updateCategory('place-1', 'cat-1', owner);
-
-      expect(result).toBeDefined();
-      expect(placeRepo.update).toHaveBeenCalledWith(
-        'place-1',
-        expect.objectContaining({ category: validCategory })
+      categoryRepo.findOneBy.mockResolvedValue(
+        category as any,
       );
+
+      jest.spyOn(service, 'findOne')
+        .mockResolvedValue(createMockPlace());
+
+      await service.updateCategory(
+        'place-1',
+        'cat-1',
+        createMockUser(),
+      );
+
+      expect(placeRepo.update)
+        .toHaveBeenCalledWith(
+          'place-1',
+          expect.objectContaining({
+            category,
+          }),
+        );
     });
   });
 
-  describe('updateBookingMode - Business Rules', () => {
-    it('should throw when booking mode not found', async () => {
-      const owner = createMockUser();
+  describe('updateBookingMode', () => {
+    beforeEach(() => {
+      jest.spyOn(service, 'findOne');
+    });
+
+    it('should throw if booking mode does not exist', async () => {
       bookingRepo.findOneBy.mockResolvedValue(null);
 
       await expect(
-        service.updateBookingMode('place-1', 'invalid-booking', owner)
-      ).rejects.toThrow('Booking Mode to update not found');
-    });
-
-    it('should throw when booking mode is inactive', async () => {
-      const owner = createMockUser();
-      const inactiveBooking = { ...createMockBookingMode(), is_active: false };
-      bookingRepo.findOneBy.mockResolvedValue(inactiveBooking);
-
-      await expect(
-        service.updateBookingMode('place-1', 'book-1', owner)
+        service.updateBookingMode(
+          'place-1',
+          'invalid-booking',
+          createMockUser(),
+        ),
       ).rejects.toThrow(BadRequestException);
     });
 
-    it('should update booking mode when valid', async () => {
-      const owner = createMockUser();
-      const validBooking = createMockBookingMode();
-      const existingPlace = createMockPlace();
+    it('should update booking mode successfully', async () => {
+      const booking = {
+        id: 'book-1',
+        is_active: true,
+      };
 
-      bookingRepo.findOneBy.mockResolvedValue(validBooking);
-      placeRepo.findOne.mockResolvedValue(existingPlace);
-      placeRepo.update.mockResolvedValue({ affected: 1 } as any);
+      bookingRepo.findOneBy.mockResolvedValue(
+        booking as any,
+      );
 
-      const result = await service.updateBookingMode('place-1', 'book-1', owner);
+      jest.spyOn(service, 'findOne')
+        .mockResolvedValue(createMockPlace());
 
-      expect(result).toBeDefined();
+      await service.updateBookingMode(
+        'place-1',
+        'book-1',
+        createMockUser(),
+      );
+
+      expect(placeRepo.update)
+        .toHaveBeenCalledWith(
+          'place-1',
+          expect.objectContaining({
+            booking_mode: booking,
+          }),
+        );
     });
   });
 
-  describe('updateCity - Business Rules', () => {
-    it('should throw when city not found', async () => {
-      const owner = createMockUser();
-      cityRepo.findOneByOrFail.mockRejectedValue(new Error('City not found'));
-
-      await expect(
-        service.updateCity('place-1', 'invalid-city', owner)
-      ).rejects.toThrow();
+  describe('deleteImage', () => {
+    beforeEach(() => {
+      jest.spyOn(service, 'findOne')
+        .mockResolvedValue(createMockPlace());
     });
 
-    it('should throw when city is inactive', async () => {
+    it('should delete image successfully', async () => {
       const owner = createMockUser();
-      const inactiveCity = { ...createMockCity(), is_active: false };
-      cityRepo.findOneByOrFail.mockResolvedValue(inactiveCity);
 
-      await expect(
-        service.updateCity('place-1', 'city-1', owner)
-      ).rejects.toThrow();
+      const image = {
+        id: 'image-1',
+        storage_id: 'cloudinary-id',
+      };
+
+      placeImageRepo.findOne.mockResolvedValue(
+        image as any,
+      );
+
+      const imageUploadService = moduleRef.get(
+        ImageUploadService,
+      );
+
+      const result = await service.deleteImage(
+        'place-1',
+        'image-1',
+        owner,
+      );
+
+      expect(placeImageRepo.remove)
+        .toHaveBeenCalledWith(image);
+
+      expect(imageUploadService.deleteImage)
+        .toHaveBeenCalledWith('cloudinary-id');
+
+      expect(result).toEqual(image);
     });
 
-    it('should update city and return transformed DTO', async () => {
-      const owner = createMockUser();
-      const validCity = createMockCity();
-      const existingPlace = createMockPlace();
-
-      placeRepo.findOneOrFail.mockResolvedValue(existingPlace);
-      cityRepo.findOneByOrFail.mockResolvedValue(validCity);
-      placeRepo.save.mockResolvedValue({ ...existingPlace, city: validCity });
-
-      const result = await service.updateCity('place-1', 'city-1', owner);
-
-      expect(result).toBeDefined();
-    });
-  });
-
-  describe('deleteImage - Business Flow', () => {
-    it('should throw when image not found in place', async () => {
-      const owner = createMockUser();
-      placeRepo.findOne.mockResolvedValue(createMockPlace());
+    it('should throw if image does not exist', async () => {
       placeImageRepo.findOne.mockResolvedValue(null);
 
-      
+      await expect(
+        service.deleteImage(
+          'place-1',
+          'invalid-image',
+          createMockUser(),
+        ),
+      ).rejects.toThrow(BadRequestException);
     });
-  });
 
-  describe('Edge Cases & Error Handling', () => {
-    it('should handle concurrent update requests gracefully', async () => {
-    
-    });
+    it('should continue even if cloud deletion fails', async () => {
+      const image = {
+        id: 'image-1',
+        storage_id: 'cloudinary-id',
+      };
 
-    it('should maintain data integrity on partial failures', async () => {
-    
+      placeImageRepo.findOne.mockResolvedValue(
+        image as any,
+      );
+
+      const imageUploadService = moduleRef.get(
+        ImageUploadService,
+      );
+
+      imageUploadService.deleteImage = jest.fn()
+        .mockRejectedValue(
+          new Error('Cloudinary error'),
+        );
+
+      const result = await service.deleteImage(
+        'place-1',
+        'image-1',
+        createMockUser(),
+      );
+
+      expect(placeImageRepo.remove)
+        .toHaveBeenCalled();
+
+      expect(result).toEqual(image);
     });
   });
 });

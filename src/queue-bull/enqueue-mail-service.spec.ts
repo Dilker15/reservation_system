@@ -27,7 +27,7 @@ describe("Enqueue mail services",()=>{
             providers:[
                 EnqueueMailServices,
                 {
-                    provide:getQueueToken('emails-queue'),
+                    provide:getQueueToken('notifications.email'),
                     useValue:mockqueue,
                 },
                 {

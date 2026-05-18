@@ -12,7 +12,7 @@ describe('ParserNotificationData', () => {
     parser = new ParserNotificationData();
   });
 
-  it('should return DAILY reservation data with hours and same start/end date', () => {
+  it('should return HOURLY reservation data with hours and same start/end date', () => {
     const reservationStart = new Date();
 
     const client = { name: 'dcp' } as any;
@@ -25,7 +25,7 @@ describe('ParserNotificationData', () => {
 
     const place = {
       name: 'place-test',
-      booking_mode: { type: BookingModeType.DAILY },
+      booking_mode: { type: BookingModeType.HOURLY },
     } as any;
 
     const result = parser.parserNotificationConfirm(client, reservation, place);
@@ -34,8 +34,8 @@ describe('ParserNotificationData', () => {
       expect.objectContaining({
         clientName: 'dcp',
         placeName: 'place-test',
-        reservationStart: reservationStart,
-        reservationEnd: reservationStart,
+        reservationStart: reservationStart || undefined,
+        reservationEnd: reservationStart || undefined,
         startHour: '20:20',
         endHour: '21:00',
       }),

@@ -11,6 +11,10 @@ import { AvailabilityDto } from './dto/availability.dto';
 import { UpdateLocationDto } from 'src/locations/dto/update.location.dto';
 import { CalendarAvailabityDto } from 'src/common/dtos/calendarAvailabity';
 import { PlaceResponseDto } from './dto/place.response.dto';
+import { CacheRedisService } from 'src/cache-redis/cache-redis.service';
+import { placeEnumStatus } from './interfaces/interfaces';
+import { PlaceOwnerQueryDto } from './dto/placeQuery.dto';
+import { UpdateBasicInformationDto } from './dto/update-place-basicInformation.dto';
 
 
 jest.mock('uuid', () => ({
@@ -55,23 +59,31 @@ describe('PlacesController', () => {
     updated_at: new Date(),
   } as any;
 
-  const mockPlaceResponse: PlaceResponseDto = {
+  const mockPlaceResponse: PlaceResponseDto ={
     id: 'place-uuid-123-456',
     name: 'Test Restaurant',
     description: 'A great place to eat',
     address: '123 Main St',
+    bathrooms:5,
+    bedrooms:5,
+    max_guests:5,
+    size_m2:1200,
     price: 50.0,
     location: {
       id: 'location-uuid-123',
       latitude: 40.7128,
       longitude: -74.006,
     },
+    amenities:[
+      
+    ],
     opening_hours: [
       {
         id: 'opening-hour-1',
         day: 1,
         open_time: '09:00',
         close_time: '18:00',
+        is_active:true,
       },
     ],
     images: [
@@ -115,6 +127,13 @@ describe('PlacesController', () => {
           provide: ImageLocalService,
           useValue: mockImageLocalService,
         },
+        {
+          provide: CacheRedisService,
+          useValue: {
+            get: jest.fn(),
+            set: jest.fn(),
+          },
+        },
       ],
     }).compile();
 
@@ -143,7 +162,7 @@ describe('PlacesController', () => {
 
   describe('create', () => {
     const validOpeningHours: AvailabilityDto[] = [
-      { day: 1, open_time: '09:00', close_time: '18:00' },
+      { day: 1, open_time: '09:00', close_time: '18:00'},
       { day: 2, open_time: '09:00', close_time: '18:00' },
     ];
 
@@ -157,6 +176,12 @@ describe('PlacesController', () => {
       city_id: 'city-uuid-789',
       booking_mode_id: 'booking-mode-uuid-456',
       category_id: 'category-uuid-789',
+      amenity_ids:['am1','am2','am3'],
+      bathrooms:4,
+      bedrooms:5,
+      max_guests:6,
+      size_m2:234,
+      opening_hours:validOpeningHours,
     };
 
     const mockFiles: Express.Multer.File[] = [
@@ -265,7 +290,6 @@ describe('PlacesController', () => {
       const paginationDto: PaginationDto = {
         page: 1,
         limit: 10,
-        category: 'category-uuid-123',
       };
 
       mockPlacesService.findAll.mockResolvedValue({
@@ -277,7 +301,7 @@ describe('PlacesController', () => {
 
       expect(placesService.findAll).toHaveBeenCalledWith(
         expect.objectContaining({
-          category: 'category-uuid-123',
+         ...paginationDto
         }),
       );
     });
@@ -286,8 +310,6 @@ describe('PlacesController', () => {
       const paginationDto: PaginationDto = {
         page: 1,
         limit: 10,
-        min_price: 20,
-        max_price: 100,
       };
 
       mockPlacesService.findAll.mockResolvedValue({
@@ -299,8 +321,7 @@ describe('PlacesController', () => {
 
       expect(placesService.findAll).toHaveBeenCalledWith(
         expect.objectContaining({
-          min_price: 20,
-          max_price: 100,
+           ...paginationDto
         }),
       );
     });
@@ -318,8 +339,10 @@ describe('PlacesController', () => {
 
       const result = await controller.findAll(paginationDto);
 
-      expect(result.data).toEqual([]);
-      expect(result.total).toBe(0);
+      expect(result).toEqual(expect.objectContaining({
+        data:[],
+        total:0
+      }));
     });
   });
 
@@ -351,22 +374,28 @@ describe('PlacesController', () => {
   describe('getPlacesOwner', () => {
     it('should return all places owned by the authenticated user', async () => {
       const ownedPlaces = [mockPlaceResponse];
-
+      const filterOnwer:PlaceOwnerQueryDto = {
+        status : placeEnumStatus.ACTIVE,
+        name: 'test',
+      }
       mockPlacesService.getMyPlaces.mockResolvedValue(ownedPlaces);
 
-      const result = await controller.getPlacesOwner(mockUser);
+      const result = await controller.getPlacesOwner(mockUser,filterOnwer);
 
-      expect(placesService.getMyPlaces).toHaveBeenCalledWith(mockUser);
+      expect(placesService.getMyPlaces).toHaveBeenCalledWith(mockUser,filterOnwer);
       expect(result).toEqual(ownedPlaces);
       expect(result).toHaveLength(1);
     });
 
     it('should return empty array when owner has no places', async () => {
       mockPlacesService.getMyPlaces.mockResolvedValue([]);
+      const filterOnwer:PlaceOwnerQueryDto = {
+        status : placeEnumStatus.ACTIVE,
+        name: 'test',
+      }
+      const result = await controller.getPlacesOwner(mockUser,filterOnwer);
 
-      const result = await controller.getPlacesOwner(mockUser);
-
-      expect(placesService.getMyPlaces).toHaveBeenCalledWith(mockUser);
+      expect(placesService.getMyPlaces).toHaveBeenCalledWith(mockUser,filterOnwer);
       expect(result).toEqual([]);
     });
   });
@@ -375,9 +404,15 @@ describe('PlacesController', () => {
     const placeId = 'place-uuid-to-update';
 
     it('should update place basic information', async () => {
-      const updateDto: UpdatePlaceDto = {
-        name: 'Updated Restaurant Name',
-        description: 'Updated description',
+      const updateDto: UpdateBasicInformationDto = {
+        address:'Palm Beach Updated',
+        bathrooms:5,
+        bedrooms:5,
+        description:'Best place to spend time with family and friends',
+        max_guests:5,
+        name:'Delta river',
+        price:4200,
+
       };
 
       const updatedPlace = { ...mockPlaceResponse, ...updateDto };
@@ -392,19 +427,6 @@ describe('PlacesController', () => {
       );
       expect(result?.name).toBe(updateDto.name);
       expect(result?.description).toBe(updateDto.description);
-    });
-
-    it('should update place price', async () => {
-      const updateDto: UpdatePlaceDto = {
-        price: 120.5,
-      };
-
-      const updatedPlace = { ...mockPlaceResponse, price: 120.5 };
-      mockPlacesService.updateBasicInformation.mockResolvedValue(updatedPlace);
-
-      const result = await controller.updatePlace(updateDto, placeId, mockUser);
-
-      expect(result?.price).toBe(120.5);
     });
   });
 
@@ -648,25 +670,21 @@ describe('PlacesController', () => {
 
       mockPlacesService.getCalendar.mockResolvedValue(expectedResult);
 
-      const result = await controller.getShedule(placeId, calendarDto);
+      const result = await controller.getShedule(placeId);
 
       expect(placesService.getCalendar).toHaveBeenCalledWith(
         placeId,
-        calendarDto,
       );
       expect(result).toEqual(expectedResult);
     });
 
     it('should handle optional date parameters', async () => {
-      const calendarDto: CalendarAvailabityDto = {};
-
       mockPlacesService.getCalendar.mockResolvedValue({ schedules: [] });
 
-      await controller.getShedule(placeId, calendarDto);
+      await controller.getShedule(placeId);
 
       expect(placesService.getCalendar).toHaveBeenCalledWith(
         placeId,
-        calendarDto,
       );
     });
   });

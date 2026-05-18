@@ -49,7 +49,6 @@ export class EmailsService {
   
     } catch (error) {
       this.logger.error("Email sending error to email : " + to, error.trace);
-      console.log(error);
       throw new InternalServerErrorException(`Email was not sent to: ${to}`);
     }
   }

@@ -36,7 +36,7 @@ describe("EnqueImageService",()=>{
                     useValue:mockLogger,
                 },
                 {
-                    provide:getQueueToken('imageupload-queue'),
+                    provide:getQueueToken('media.image-upload'),
                     useValue:mockQueueImages,
                 }
             ]
