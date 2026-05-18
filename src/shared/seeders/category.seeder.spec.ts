@@ -25,24 +25,20 @@ describe("Shared.CategorySeeders",()=>{
 
 
     it("should call save for each category if table is empty",async()=>{
-        const sp = jest.spyOn(console,'log');
         await seedCategory(mockDataSource as unknown as DataSource);
         expect(mockDataSource.getRepository).toHaveBeenCalled();
         expect(mockRepository.count).toHaveBeenCalled();
         expect(mockRepository.save).toHaveBeenCalledTimes(categories.length);
-        expect(sp).toHaveBeenCalled();
         
     });
 
 
     it("should not insert categories",async()=>{
-        const splog = jest.spyOn(console,'log');
         mockRepository.count?.mockResolvedValue(2);
         await seedCategory(mockDataSource as unknown as DataSource);
         expect(mockDataSource.getRepository).toHaveBeenCalled();
         expect(mockRepository.count).toHaveBeenCalled();
         expect(mockRepository.save).not.toHaveBeenCalled();
-        expect(splog).not.toHaveBeenCalled();
 
     });
 

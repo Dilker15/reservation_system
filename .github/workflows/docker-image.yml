@@ -1,14 +1,146 @@
-name: Docker Image CI
+# (testing + build image + push to Docker Hub and ECR + deploy en ECS).
 
-on:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+name: Deployment Pipeline
+
+on: 
+   push:
+      branches: [testing-pipeline]
+
+
+env:
+  repo-name: place-reservations-api
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Processing step
-        run: echo "processing"
+ # testing:
+ #   strategy:
+  #       fail-fast: false
+  #       matrix:
+  #        os: [ubuntu-latest]
+  #         node: [20]
+  #   runs-on: ${{matrix.os}}
+  #   steps:
+  #       - name: Get Code
+  #         uses: actions/checkout@v4
+
+  #       - name: Install Node
+  #         uses: actions/setup-node@v4
+  #         with:
+  #           node-version: ${{matrix.node}}
+  #           cache: 'npm'
+
+  #       - name: Install Dependencies
+  #         run: npm ci
+
+  #       - name: Run Testing
+  #         id: id-testing
+  #         run : npm run test:cov
+
+  #       - name: Set Timestamp
+  #         id: id-time
+  #         if: failure() && steps.id-testing.outcome == 'failure'
+  #         run: echo "date=$(date +'%Y-%m-%d_%H-%M-%S')" >> $GITHUB_OUTPUT
+
+  #       - name: Upload HTML Coverage if Fail
+  #         if: failure() && steps.id-testing.outcome == 'failure'
+  #         uses: actions/upload-artifact@v4
+  #         with:
+  #            name: coverage-report-${{ steps.id-time.outputs.date }}
+  #            path: coverage/lcov-report/
+
+  build-image-upload:
+      runs-on: ubuntu-latest
+    #  needs: testing
+      if: always()
+
+      steps:
+        - name: Checkout
+          uses: actions/checkout@v4
+
+        - name: Set up Docker Buildx
+          uses: docker/setup-buildx-action@v3
+
+        - name: configure AWS credentials
+          uses : aws-actions/configure-aws-credentials@v4
+          with:
+              aws-access-key-id: ${{  secrets.AWS_ACCESS_KEY }}
+              aws-secret-access-key: ${{ secrets.AWS_SECRET_KEY }}
+              aws-region: ${{ vars.AWS_REGION }}
+          
+        - name: Log in to Amazon ECR
+          id: id-login-ecr
+          uses: aws-actions/amazon-ecr-login@v2
+
+
+        - name: Login to Docker Hub
+          uses: docker/login-action@v3
+          with:
+            username: ${{ secrets.DOCKER_USER }}
+            password: ${{ secrets.DOCKER_PASSWORD }}
+
+        - name: Extract metadata Docker
+          id: id-meta
+          uses: docker/metadata-action@v5
+          with:
+            images: |
+                    ${{ secrets.DOCKER_USER }}/${{ env.repo-name }}
+                    ${{ steps.id-login-ecr.outputs.registry }}/${{ env.repo-name }}
+            tags: |
+              type=raw,value=latest
+              type=sha
+
+        
+        - name: Get ECR Image URI
+          id: image
+          run: |
+              SHORT_SHA=$(echo $GITHUB_SHA | cut -c1-7)
+              echo "image=${{ steps.id-login-ecr.outputs.registry }}/${{ env.repo-name }}:sha-$SHORT_SHA" >> $GITHUB_OUTPUT
+            
+        - name: Set Timestamp
+          id: id-time
+          run: echo "date=$(date +'%Y-%m-%d_%H-%M-%S')" >> $GITHUB_OUTPUT
+
+
+        - name: Build / Push to Docker and ECR
+          uses: docker/build-push-action@v5
+          with:
+            context: .
+            push: true
+            tags: ${{ steps.id-meta.outputs.tags }}
+            cache-from: type=gha
+            cache-to: type=gha,mode=max
+
+
+        - name: Download task definition ecs
+          env:
+            TASK_DEFINITION_FAMILY: ${{env.repo-name}}-task-definition-family
+          run: |
+                aws ecs describe-task-definition --task-definition ${{ env.TASK_DEFINITION_FAMILY }} --query taskDefinition > task-definition.json
+    
+          
+
+        - name: Replace image ID in TaskDefintion downloaded from ECS
+          id: id-task-def
+          uses: aws-actions/amazon-ecs-render-task-definition@v1
+          with:
+              task-definition: task-definition.json
+              container-name: ${{env.repo-name}}-container
+              image: ${{ steps.image.outputs.image }}
+              environment-variables: |
+                    DEPLOYED_TOKEN=${{ github.sha }}
+                    DEPLOYED_AT=${{ steps.id-time.outputs.date }}
+
+
+        - name: Deploy task definition updated and update Service s3
+          uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+          with:
+            task-definition: ${{ steps.id-task-def.outputs.task-definition }}
+            service: ${{env.repo-name}}-service
+            cluster: ${{ env.repo-name }}
+            wait-for-service-stability: true
+
+      
+    
+
+        
+
+

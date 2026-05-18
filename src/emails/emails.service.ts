@@ -23,7 +23,11 @@ export class EmailsService {
     variables: Record<string, any>
   ) {
     try {
-      const templatePath = path.join(process.cwd(), 'src', 'email_templates', templateName);
+      const templatePath = path.join(
+        __dirname,
+        '../email_templates',
+        templateName
+      );
       let template = await fs.readFile(templatePath, 'utf-8');
   
       const finalVariables = {
@@ -37,7 +41,7 @@ export class EmailsService {
       }
   
       await this.transporter.sendMail({
-        from: `"Pro - Reservation" <${process.env.MAIL_USER}>`,
+        from: `"Pro - Reservations" <${process.env.MAIL_USER}>`,
         to,
         subject,
         html: template,

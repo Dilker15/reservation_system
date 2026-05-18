@@ -37,23 +37,25 @@ import { CacheRedisModule } from './cache-redis/cache-redis.module';
          host:config.get<string>('DB_HOST'),
          username:config.get<string>('DB_USERNAME'),
          password:config.get<string>('DB_PASSWORD'),
-          /*ssl: {
+          ssl: {
             rejectUnauthorized: false,
-          },*/
+          },
          synchronize:true,
          autoLoadEntities:true,
          
       })
     }),
     BullModule.forRootAsync({
-      imports:[ConfigModule],
-      inject:[ConfigService],
-      useFactory:(config:ConfigService)=>({
-        connection:{
-          host:config.get<string>('REDIS_HOST'),
-          port:config.get<number>('REDIS_PORT'),
-        }
-      })
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => {
+        const url = config.get<string>('REDIS_URL')!;
+        return {
+          connection: {
+            url
+          },
+        };
+      },
     }),
     CacheRedisModule,
     AuthModule,

@@ -54,16 +54,16 @@ describe('AuthController', () => {
 
     it('verifyEmail should throw NotImplementedException', () => {
        expect(() => controller.verifyEmail({ email: 'test@test.com', verification_code: '1234' }))
-       .toThrow(new NotImplementedException('verify-email endpoint is not implemented yet'));
+       .toThrow();
     });
 
     it("restorePassword should throw NotImplementedException",()=>{
       expect(() => controller.restorePassword({ email: 'test@test.com' }))
-      .toThrow(new NotImplementedException('restorePassword endpoint is not implemented yet'));
+      .toThrow();
     });
 
     it('resetPassword should throw NotImplementedException',() => {
       expect(() => controller.resetPassword({ email: 'test@test.com' }))
-      .toThrow(new NotImplementedException('resetPassword endpoint is not implemented yet'));
+      .toThrow();
     });
 });

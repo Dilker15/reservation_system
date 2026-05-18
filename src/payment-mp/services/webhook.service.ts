@@ -54,7 +54,7 @@ export class WebHookService {
             }
 
             if(await this.reservationService.reservationIsPaid(currentPayment.reservationId)){ 
-               this.logger.log(`refund money  payment: ${paymentId} - provider : ${provider}`);
+               this.logger.log(`refund money  payment: ${paymentId} - provider : ${provider}`); // TODO : REFUND MONEY IN THE FUTURE.
                return;
             }
             
