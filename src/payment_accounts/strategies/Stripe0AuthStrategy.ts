@@ -52,10 +52,6 @@ export class StripeOAuthStrategy implements OAuthStrategy {
           isEnable: true,
         };
       } catch (error: any) {
-        console.error(
-          'Stripe exchange token error:',
-          error.response?.data || error.message,
-        );
         throw new InternalServerErrorException(
           'Error exchanging Stripe code for token',
         );

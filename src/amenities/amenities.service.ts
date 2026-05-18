@@ -17,7 +17,6 @@ export class AmenitiesService {
     const count = await this.amenityRepository.count();
   
     if (count > 0) {
-      console.log('Amenities already exist');
       return;
     }
   
@@ -28,7 +27,6 @@ export class AmenitiesService {
     );
   
     await this.amenityRepository.save(amenities);
-    console.log('Amenities created successfully');
   }
 
 

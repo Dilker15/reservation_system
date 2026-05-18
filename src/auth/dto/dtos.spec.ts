@@ -12,7 +12,6 @@ describe('LoginResponseDto', () => {
     loginData.name = 'test1';
     loginData.last_name = 'lastname test';
     loginData.role = Roles.CLIENT;
-    loginData.token = 'testtoken';
 
     const res = await validate(loginData);
     expect(res.length).toBe(0);
@@ -32,7 +31,6 @@ describe('LoginResponseDto', () => {
     loginData.name = 'test1';
     loginData.last_name = 'lastname test';
     loginData.role = Roles.CLIENT;
-    loginData.token = 'testtoken';
 
     const res = await validate(loginData);
     expect(res.some(r => r.property === 'id')).toBeTruthy();
@@ -46,7 +44,6 @@ describe('LoginResponseDto', () => {
     loginData.name = 'test1';
     loginData.last_name = 'lastname test';
     loginData.role = Roles.CLIENT;
-    loginData.token = 'testtoken';
 
     const res = await validate(loginData);
     expect(res.some(r => r.property === 'email')).toBeTruthy();
@@ -59,9 +56,8 @@ describe('LoginResponseDto', () => {
     loginData.is_active = true;
     loginData.name = 'test1';
     loginData.last_name = 'lastname test';
-    //@ts-expect-error para forzar un valor no permitido
+    //@ts-expect-error
     loginData.role = "INVALID_ROLE";
-    loginData.token = 'testtoken';
 
     const res = await validate(loginData);
     expect(res.some(r => r.property === 'role')).toBeTruthy();
