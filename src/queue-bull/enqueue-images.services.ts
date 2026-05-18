@@ -34,6 +34,7 @@ export class EnqueueImagesUploadServices{
            await this.queueImages.add(JobNameImages.UPDATEIMAGES,{images:imagesRoutesToUpdate,place:place_id,owner:owner_id});
            this.logger.log("Enqueue Images to update succesfully placeId : "+place_id);
        }catch(error){
+           this.logger.error("error on enqueImageToUpdate place_id: " + place_id,error.stack ||" trace not found");
           throw error;
        }
     }

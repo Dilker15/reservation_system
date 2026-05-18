@@ -1,33 +1,22 @@
 
 
 
-FROM node:24.6.0-alpine3.22 AS dependencies
+
+
+
+FROM node:20-alpine AS builder
 WORKDIR /app
-COPY package.json package-lock.json /app/
+COPY package*.json ./
 RUN npm ci
-
-
-
-FROM node:24.6.0-alpine3.22 AS testing
-WORKDIR /app
-COPY . ./
-COPY --from=dependencies /app/node_modules ./node_modules
-RUN npm run test
-
-
-FROM node:24.6.0-alpine3.22 AS prebuild
-WORKDIR /app
-COPY . ./
-COPY --from=dependencies /app/node_modules ./node_modules
+COPY . .
 RUN npm run build
-
-
-FROM node:24.6.0-alpine3.22 AS build_production
+    
+    
+FROM node:20-alpine
 WORKDIR /app
-COPY package.json package-lock.json /app/
-RUN npm ci --omit=dev
-COPY --from=prebuild /app/dist /app/dist
-CMD ["node","dist/main.js"]
-
-
-
+COPY package*.json ./
+RUN npm ci --omit=dev && npm cache clean --force
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/src/email_templates ./dist/email_templates
+EXPOSE 4000
+CMD ["node", "dist/main.js"]

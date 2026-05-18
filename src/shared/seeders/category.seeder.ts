@@ -12,5 +12,5 @@ export async function seedCategory(data:DataSource):Promise<void>{
     for(const categorie of categories){
        await repo.save({...categorie});
     }
-    console.log("seeder category created");
+    //console.log("seeder category created");
 }

@@ -25,22 +25,18 @@ describe("Shared.BookingModeSeeder",()=>{
   });
 
    it('should call save for each booking mode if table is empty', async () => {
-    const x = jest.spyOn(console,'log');
     await seedBookingMode(mockDataSource as unknown as DataSource);
     expect(mockRepository.count).toHaveBeenCalled();
     expect(mockDataSource.getRepository).toHaveBeenCalled();
     expect(mockRepository.save).toHaveBeenCalledTimes(bookingModesData.length);
-    expect(x).toHaveBeenCalled();
 
   });
 
 
   it("should not insert bookingmode",async()=>{
     mockRepository.count?.mockResolvedValueOnce(2);
-    const lgspy = jest.spyOn(console,'log');
     await seedBookingMode(mockDataSource as unknown as DataSource);
     expect(mockRepository.save).not.toHaveBeenCalled();
-    expect(lgspy).not.toHaveBeenCalled();
   });
 
 

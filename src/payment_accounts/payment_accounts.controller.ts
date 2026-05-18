@@ -76,7 +76,6 @@ export class PaymentAccountsController {
     if (error) {
       return res.redirect(`${process.env.FRONT_END_URL}/error?reason=${error}`);
     }
-
     if (!code || !state) {
       return res.redirect(`${process.env.FRONT_END_URL}/error?reason=missing_params`);
     }

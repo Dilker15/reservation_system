@@ -40,7 +40,7 @@ describe("BookingModeController",()=>{
 
 
     it("should return a booking-mode list",async()=>{
-         await controller.getBookinModes();
+         await controller.getBookingModes();
          expect(mockBookingService.findAll).toHaveBeenCalledTimes(1);
 
     });

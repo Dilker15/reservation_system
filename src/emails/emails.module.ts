@@ -16,7 +16,7 @@ import { AppLoggerModule } from 'src/logger/logger.module';
         return nodemailer.createTransport({
           host: config.get<string>('MAIL_HOST'),
           port: config.get<number>('MAIL_PORT'),
-          secure: false,
+          secure: true,
           auth: {
             user: config.get<string>('MAIL_USERNAME'),
             pass: config.get<string>('MAIL_PASSWORD'),
