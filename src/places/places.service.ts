@@ -125,10 +125,10 @@ export class PlacesService {
   async findAll(queryParams: PlaceQueryDto) {
     const { limit = 10, page = 1 } = queryParams;
   
-    const keyCache = `places:limit=${limit}:page=${page}:category=${queryParams.category ?? 'all'}:city=${queryParams.city??''}`;
+    const keyCache = this.generateCacheKey(queryParams,page,limit);
     const cached = await this.cacheService.get(keyCache);
     if (cached) {
-      this.appLogService.log(`places cachd : ${keyCache}`)
+      this.appLogService.log(`places cached : ${keyCache}`)
       return cached;
     }
   
@@ -143,7 +143,8 @@ export class PlacesService {
     if (data.length > 0) {
       const placeIds = data.map(place => place.id);
   
-      const places = await this.placeRepo.find({
+      const places = await this.placeRepo.find({ // Current query size is small (< 11 records), so N+1 impact is minimal.
+                                                  // Can be optimized in the future if dataset grows.
         where: { id: In(placeIds) },
         relations: ['images'],
         select: {
@@ -599,6 +600,7 @@ export class PlacesService {
         querySql.andWhere('place.bedrooms >= :bed',{bed:queryParams.bedrooms});
       }
       
+      console.log("QUERY PARAMS PLACE FILTER : ",queryParams);
       querySql.andWhere('place.status = :myStatus',{myStatus:'active'});
     return querySql;
   }
@@ -620,6 +622,20 @@ export class PlacesService {
 
   private createPlaceResponseDto(placesData:Place){
     return plainToInstance(PlaceResponseDto,placesData,{excludeExtraneousValues:true});
+  }
+
+
+  private generateCacheKey(queryParams:PlaceQueryDto,page:number,limit:number):string{
+     return `places:` +
+     `city=${queryParams.city ?? ''}:` +
+     `priceMin=${queryParams.min_price ?? ''}:` +
+     `priceMax=${queryParams.max_price ?? ''}:` +
+     `maxGuests=${queryParams.max_guests ?? ''}:` +
+     `category=${queryParams.category}:`+
+     `bedrooms=${queryParams.bedrooms}:`+
+     `reservationType=${queryParams.reservation_mode ?? ''}:` +
+     `page=${page}:limit=${limit}`;
+
   }
 
 
