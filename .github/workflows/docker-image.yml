@@ -1,4 +1,4 @@
-# (testing + build image + push to Docker Hub and ECR + deploy en ECS).
+# (testing + build image + push to Docker Hub and ECR + deploy en ECS)
 
 name: CI/CD Pipeline - ECS Fargate
 
