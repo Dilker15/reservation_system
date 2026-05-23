@@ -208,6 +208,11 @@ export class PlacesService {
 
   async findOne(placeId: string,currentOwner?: User): Promise<PlaceResponseDto> {
     try {
+      let key = this.generateCacheByPlaceId(placeId,currentOwner?.id);
+      let dataCached = await this.cacheService.get(key);
+      if(dataCached){
+         return this.createPlaceResponseDto(dataCached as Place);
+      }
       const query = this.placeRepo
         .createQueryBuilder('place')
         .leftJoinAndSelect('place.images', 'image')
@@ -271,7 +276,7 @@ export class PlacesService {
       if (!placeFound) {
         throw new BadRequestException(`Place with ${placeId} not found`);
       }
-  
+      await this.cacheService.set(key,placeFound);
       return this.createPlaceResponseDto(placeFound);
   
     } catch (error) {
@@ -293,6 +298,7 @@ export class PlacesService {
                 ...updatePlaceDto,
                 updated_at:new Date(),
         });
+      await this.cacheService.del(this.generateCacheByPlaceId(place_id))
       return placeFound;
     }catch(error:unknown){
       this.throwCommonError(error,"Error on updateBasic Information place");
@@ -310,6 +316,7 @@ export class PlacesService {
          }
          await this.enqueueImageService.enqueImageToUpdate(place_id,filesToUpdate,owner.id);
          this.logger.log("Images to update enqueued successfully");
+         await this.cacheService.del(this.generateCacheByPlaceId(place_id));
          return { message: `images will be updated (${placeToUpdate.images.length} total)` };
 
       }catch(error){
@@ -324,7 +331,8 @@ export class PlacesService {
           throw new BadRequestException("Category not found");
         }
         const placeFound = await this.findOne(place_id,owner);
-        await this.placeRepo.update(place_id,{category:categoryFound});
+        await Promise.all([ this.placeRepo.update(place_id,{category:categoryFound}),
+                            this.cacheService.del(this.generateCacheByPlaceId(place_id))])
         return placeFound;
   }
 
@@ -337,6 +345,7 @@ export class PlacesService {
      }
     const placeFound = await this.findOne(place_id,owner); // THIS VERIFY IF PLACE EXISTS AND RETURN IT;
     await this.placeRepo.update(place_id,{booking_mode:bookingFound});
+    await this.cacheService.del(this.generateCacheByPlaceId(place_id));
     return placeFound;
   }  
 
@@ -366,6 +375,7 @@ export class PlacesService {
         place.updated_at = new Date();
     
         const updatedPlace = await this.placeRepo.save(place);
+        await this.cacheService.del(this.generateCacheByPlaceId(place_id));
         this.logger.log(`City updated successfully for place_id: ${place_id}`);
         return this.createPlaceResponseDto(updatedPlace);
     
@@ -390,8 +400,9 @@ export class PlacesService {
           `Image with ID ${image_id} not found in place ${place_id}`
         );
       }
-    
+      
       await repo.remove(imageFound);
+      await this.cacheService.del(this.generateCacheByPlaceId(place_id));
       this.logger.log("Image deleted from DB successfully");
     
       try {
@@ -480,7 +491,7 @@ export class PlacesService {
           });
        });
          await imageRepo.save(imagesToUpdate);
-         await this.cacheService.del('place')
+         await this.cacheService.del(this.generateCacheByPlaceId(place_id));
          queryRun.commitTransaction();
      }catch(error ){
         queryRun.rollbackTransaction();
@@ -599,8 +610,6 @@ export class PlacesService {
       if(Number(queryParams.bedrooms) > 0){
         querySql.andWhere('place.bedrooms >= :bed',{bed:queryParams.bedrooms});
       }
-      
-      console.log("QUERY PARAMS PLACE FILTER : ",queryParams);
       querySql.andWhere('place.status = :myStatus',{myStatus:'active'});
     return querySql;
   }
@@ -625,7 +634,7 @@ export class PlacesService {
   }
 
 
-  private generateCacheKey(queryParams:PlaceQueryDto,page:number,limit:number):string{
+  private generateCacheKey(queryParams:PlaceQueryDto,page:number,limit:number):string{    // crate a utils folder and export
      return `places:` +
      `city=${queryParams.city ?? ''}:` +
      `priceMin=${queryParams.min_price ?? ''}:` +
@@ -638,6 +647,11 @@ export class PlacesService {
 
   }
 
+
+  private generateCacheByPlaceId(place_id:string,owner_id?:string):string{               // crate a utils folder and export
+     let key = owner_id ? `place:${place_id}:owner:${owner_id}`:`place:${place_id}`;
+     return key;
+  }
 
 
 
