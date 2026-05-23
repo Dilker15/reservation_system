@@ -15,7 +15,7 @@ export function ImageUploadInterceptor(
   options: ImageInterceptorOptions = {}
 ) {
   const {
-    maxFileSize = 3,
+    maxFileSize = 10,
     allowedFormats = ['jpg', 'jpeg', 'png', 'webp'],
   } = options;
 
