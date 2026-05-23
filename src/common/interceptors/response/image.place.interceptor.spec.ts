@@ -22,7 +22,7 @@ describe('ImageUploadInterceptor', () => {
     const [, maxCount, options] = mockFilesInterceptor.mock.calls[0];
 
     expect(maxCount).toBe(5);
-    expect(options.limits.fileSize).toBe(3 * 1024 * 1024);
+    expect(options.limits.fileSize).toBe(10 * 1024 * 1024);
     expect(options.limits.files).toBe(5);
     expect(options.storage).toBeDefined();
     expect(typeof options.fileFilter).toBe('function');
